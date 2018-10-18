@@ -6,5 +6,5 @@
     Abriana Fornis
     
 
-Data Structures Implemented: Socket, Python Server, Python Client, C Server, C Client
+Data Structures Implemented: Socket, Python Server, Python Client, C Server, C Client\
 Languages Used: Python, C
