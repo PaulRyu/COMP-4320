@@ -1,5 +1,7 @@
 # COMP-4320 Laboratory Assignment 2
 
+##Auburn University | Fall 2018
+
 ### Group Members:
     Paul Ryu
     William Atkinson
