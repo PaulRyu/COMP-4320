@@ -2,7 +2,7 @@
 
 ## Auburn University | Fall 2018
 
-### Group Members:
+### Lab Group 22:
     Paul Ryu
     William Atkinson
     Abriana Fornis
