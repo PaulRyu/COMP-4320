@@ -1,6 +1,16 @@
 import socket
+import sys
+import string
+import struct
+import binascii
+import array
+import numpy as np
+
+MAXDATASIZE = 100
+INET6_ADDRSTRLEN = 16
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
 
 def main(argc, argv=[]):
     sockfd = 0
@@ -8,8 +18,11 @@ def main(argc, argv=[]):
     rv = 0
     masterPortNumber = 0
 
-    buffer[MAXDATASIZE] = 0
-    s[INET6_ADDRSTRLEN] = 0
+    # buffer[MAXDATASIZE] = 0
+    buffer = np.chararray(MAXDATASIZE)
+
+    # s[INET6_ADDRSTRLEN] = 0
+    s = np.chararray(INET6_ADDRSTRLEN)
 
     received_GID = 0
     received_MagicNumber = 0
