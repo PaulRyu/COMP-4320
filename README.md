@@ -1,3 +1,5 @@
+<p align="center">
+
 # COMP-4320 Laboratory Assignment 2
 
 ## Auburn University | Fall 2018
@@ -6,7 +8,8 @@
     Paul Ryu
     William Atkinson
     Abriana Fornis
-    
+  
+</p>
 
 Data Structures Implemented: Socket, Python Server, Python Client, C Server, C Client\
 Languages Used: Python, C
