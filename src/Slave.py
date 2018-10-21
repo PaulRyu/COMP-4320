@@ -32,22 +32,28 @@ def main(argc, argv = []):
 
     # This is our group ID. Lab Group 22.
     OUR_GID = 22
+    MAGIC_NUMBER = 0x4A6F7921
+    MAGIC_NUMBER_BINARY = struct.pack('>I', MAGIC_NUMBER)
 
-    # Variables
-    received_GID = 0
+    # --------------------------- Variables ---------------------------
+
+    receivedGID = 0
     received_MagicNumber = 0
     received_nextSlaveIP = 0
     myRID = 0
     nextSlaveIP = 0
 
-    # nextSlaveIP_String[INET_ADDRSTRLEN] = 0
     nextSlaveIP_String = np.chararray(INET6_ADDRSTRLEN)
 
-    GID_Struct = 0
+    message = struct.pack_into(OUR_GID, MAGIC_NUMBER_BINARY)
 
     magicNumber_Struct = 0
 
     if argc != 3:
-        rando = 0
+        print("oh noooo")
+
+    if MasterPort < 0 or MasterPort > 65535:
+        print("Slave Error")
+        exit(1)
 
     return 0
