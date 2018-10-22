@@ -24,16 +24,16 @@ def main(argc, argv = []):
     sockfd = 0
     numbytes = 0
     rv = 0
-    MasterPort = 0
+    master_port = 0
     buffer = np.chararray(MAXDATA)
     s = np.chararray(INET6_ADDRSTRLEN)
 
     # --------------------------- Constants ---------------------------
 
     # This is our group ID. Lab Group 22.
-    OUR_GID = 22
-    MAGIC_NUMBER = 0x4A6F7921
-    MAGIC_NUMBER_BINARY = struct.pack('>I', MAGIC_NUMBER)
+    our_gid = 22
+    magic_number = 0x4A6F7921
+    magic_number_binary = struct.pack('>I', magic_number)
 
     # --------------------------- Variables ---------------------------
 
@@ -45,14 +45,14 @@ def main(argc, argv = []):
 
     nextSlaveIP_String = np.chararray(INET6_ADDRSTRLEN)
 
-    message = struct.pack_into(OUR_GID, MAGIC_NUMBER_BINARY)
+    message = struct.pack_into(our_gid, magic_number_binary)
 
     magicNumber_Struct = 0
 
     if argc != 3:
         print("oh noooo")
 
-    if MasterPort < 0 or MasterPort > 65535:
+    if master_port < 0 or master_port > 65535:
         print("Slave Error")
         exit(1)
 
