@@ -55,6 +55,13 @@ def main(argc, argv=[]):
     master_port = 0
     buffer = np.chararray(MAX_BYTES)
     s = np.chararray(ADDRESS_LENGTH)
+    class structs:
+        def __init__(self):
+            # socket.addr
+            # self.hints
+            self.hints = 0
+
+
 
     ##### Constants #####
     # This is our group ID. Lab Group 22.
@@ -95,6 +102,12 @@ def main(argc, argv=[]):
     # This connects e1 to e2 and e2 to e3.
     list1.headval.nextval = e2
     e2.nextval = e3
+
+    rv = socket.getaddrinfo(argv[1], argv[2])
+
+    if (rv != 0):
+        print("Error, getaddrinfo() failed")
+
 
     ##### Handling Response from Master #####
     # //////// Insert methods here
