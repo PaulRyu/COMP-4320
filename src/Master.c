@@ -1,11 +1,10 @@
-<<<<<<< HEAD
 /* Course: COMP-4320 Introduction to Networks
  * Institution: Auburn University
  * Submitting: Laboratory Assignment 2
  * Date: October 25, 2018
  * Authors: Paul Ryu, William Atkinson, Abriana Fornis
  * Emails: phc0004@auburn.edu, wja0007@auburn.edu, adf0018@auburn.edu
- * Resources used: JetBrains CLion IDE, Github, Sublime Text 3
+ * Resources used: JetBrains CLion IDE, Github, Sublime Text 3, Visual Studio Code
  *
  * Description: The objective of this lab is to create a virtual ring of nodes over the Internet. After joining
  *             the ring, the nodes on the ring MUST use only the ring to communicate. The ring is managed by a
