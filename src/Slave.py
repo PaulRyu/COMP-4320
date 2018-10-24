@@ -13,7 +13,6 @@
 
 
 # ---------------------------- Imports ----------------------------
-import numpy as np
 import socket
 import struct
 import sys
@@ -42,6 +41,11 @@ if len(sys.argv) != 3:
     print("Invalid arguments. Try again.")
     sys.exit()
 
+# Check if the Master Port Number is between 0 and 65535.
+if MasterPortNumber < 0 or MasterPortNumber > 65535:
+    print("Slave Error")
+    sys.exit()
+
 # ----------------- Connecting Slave to the Master -----------------
 sock.connect((MasterHostName, MasterPortNumber))
 
@@ -50,17 +54,16 @@ sock.connect((MasterHostName, MasterPortNumber))
 # Need to put in values to send here.
 sock.send()
 
-# ---------------- Linked List Data Structure Setup -----------------
+# ----------------- Connecting Master to the Slave -----------------
+ConfirmationFromServer = sock.recv(4096)
+
+
+# ------------- Class To Handle Join Request Functions -------------
 # Source: https://www.tutorialspoint.com/python/python_linked_lists.htm
-class Node:
-    def __init__(self, dataval=None):
-        self.dataval = dataval
-        self.nextval = None
-
-
-class SLinkedList:
-    def __init__(self):
-        self.headval = None
+class JoinRequest:
+    def __init__(self, data=[]):
+        self.index = 0
+        self.buffer = bytearray(data)
 
 
 # --------------------- Function: getAddress() ---------------------
@@ -69,14 +72,16 @@ def getAddress():
 
 
 # ------------------------ Function: main() ------------------------
-def main(argc, argv=[]):
+def main(self, argv=[]):
+    self.position = 0
     ##### Variables used by and in the Beej guide #####
     sockfd = 0
     numbytes = 0
     rv = 0
     master_port = 0
-    buffer = np.chararray(MAX_BYTES)
-    s = np.chararray(ADDRESS_LENGTH)
+    buffer = bytearray(MAX_BYTES)
+    s = bytearray(ADDRESS_LENGTH)
+
     class structs:
         def __init__(self):
             # socket.addr
@@ -95,33 +100,13 @@ def main(argc, argv=[]):
     received_nextSlaveIP = 0
     myRID = 0
     nextSlaveIP = 0
-    nextSlaveIP_String = np.chararray(ADDRESS_LENGTH)
+    nextSlaveIP_String = bytearray(ADDRESS_LENGTH)
     magicNumber_Struct = 0
 
     ##### Packing Mechanism #####
     # This is the data to be packed into the packet.
     # The packet will be then packed into a frame for delivery.
     message = struct.pack_into(our_gid, magic_number_binary)
-
-    # Not sure how to handle argc yet. // NEED TO DO
-    if argc != 3:
-        print("oh noooo")
-
-    # Check if port number is invalid.
-    if master_port < 0 or master_port > 65535:
-        print("Slave Error")
-        exit(1)
-
-    ##### Linked List Implementation #####
-    # This sets up the nodes, using the Linked List data structure above.
-    # This is what we will use to set up our virtual ring of nodes (trust).
-    list1 = SLinkedList()
-    list1.headval = Node("First node")
-    e2 = Node("Second node")
-    e3 = Node("Third node")
-    # This connects e1 to e2 and e2 to e3.
-    list1.headval.nextval = e2
-    e2.nextval = e3
 
     rv = socket.getaddrinfo(argv[1], argv[2])
 
