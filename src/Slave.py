@@ -13,11 +13,8 @@
 
 
 # ---------------------------- Imports ----------------------------
-import array
-import binascii
 import numpy as np
 import socket
-import string
 import struct
 import sys
 
@@ -26,7 +23,15 @@ import sys
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 MAX_BYTES = 100
 ADDRESS_LENGTH = 16
+MasterHostName = sys.argv[1]
+MasterPortNumber = sys.argv[2]
+OurGroupID = 22
+MagicNumber = 0x4A6F7921
 
+
+# Conditionals
+if len(sys.argv) != 3:
+    print("Invalid arguments. Try again.")
 
 # ---------------- Linked List Data Structure Setup -----------------
 # Source: https://www.tutorialspoint.com/python/python_linked_lists.htm
@@ -60,8 +65,6 @@ def main(argc, argv=[]):
             # socket.addr
             # self.hints
             self.hints = 0
-
-
 
     ##### Constants #####
     # This is our group ID. Lab Group 22.
@@ -108,13 +111,12 @@ def main(argc, argv=[]):
     if (rv != 0):
         print("Error, getaddrinfo() failed")
 
-
     ##### Handling Response from Master #####
     # //////// Insert methods here
 
     ##### Printing Final Conclusions #####
     # //////// Insert methods here
-    print("Slave: GID of Master = %d \n", receivedGID);
-    print("Slave: My RID = %d \n", myRID);
-    print("Slave: Next Slave's IP Address = %s \n", nextSlaveIP_String);
+    print("Slave: GID of Master = %d \n", receivedGID)
+    print("Slave: My RID = %d \n", myRID)
+    print("Slave: Next Slave's IP Address = %s \n", nextSlaveIP_String)
     return 0
