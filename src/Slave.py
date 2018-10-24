@@ -20,18 +20,35 @@ import sys
 
 # ------------------------ Global Variables ------------------------
 # Source: https://wiki.python.org/moin/TcpCommunication
+# This is the socket created for the slave, or in other words - the client as in Lab 1.
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+# This is the maximum amount of bytes that our packet will handle.
 MAX_BYTES = 100
 ADDRESS_LENGTH = 16
+
+# The first argument is the executable, Slave. Nothing is needed code-wise to handle this situation.
+
+# The second argument is the Master's host name.
 MasterHostName = sys.argv[1]
+
+# The third argument is the Master's port number.
 MasterPortNumber = sys.argv[2]
 OurGroupID = 22
 MagicNumber = 0x4A6F7921
 
-
-# Conditionals
+# If the format: Slave | MasterHostName | MasterPortNumber is not followed, exit the system.
 if len(sys.argv) != 3:
     print("Invalid arguments. Try again.")
+    sys.exit()
+
+# ----------------- Connecting Slave to the Master -----------------
+sock.connect((MasterHostName, MasterPortNumber))
+
+# Other steps needed in between here.
+
+# Need to put in values to send here.
+sock.send()
 
 # ---------------- Linked List Data Structure Setup -----------------
 # Source: https://www.tutorialspoint.com/python/python_linked_lists.htm
@@ -116,7 +133,7 @@ def main(argc, argv=[]):
 
     ##### Printing Final Conclusions #####
     # //////// Insert methods here
-    print("Slave: GID of Master = %d \n", receivedGID)
-    print("Slave: My RID = %d \n", myRID)
-    print("Slave: Next Slave's IP Address = %s \n", nextSlaveIP_String)
+    print("Group ID: %d \n", receivedGID)
+    print("Ring ID:  %d \n", myRID)
+    print("IP: %s \n", nextSlaveIP_String)
     return 0
