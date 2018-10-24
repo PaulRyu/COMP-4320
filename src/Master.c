@@ -31,6 +31,8 @@ int main(int argc, char *argv[]) {
 
     int myRID = 0; // ring ID for master
     int slaveRID = 1; // assign & increment whenever a node joins
+    int nextSlaveIP = 0;  //Must be initially set to machine IP address, changed to IP of joining slave later
+    int nextSlaveID = 0;
     int myGID = 22;
     unsigned const int magic_number = 0x4A6F7921;
     const char* portNum;
