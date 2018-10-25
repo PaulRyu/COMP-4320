@@ -14,8 +14,8 @@
 
 # ---------------------------- Imports ----------------------------
 import socket
-import struct
 import sys
+import struct
 
 # ------------------------ Global Variables ------------------------
 # Source: https://wiki.python.org/moin/TcpCommunication
@@ -24,18 +24,72 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # This is the maximum amount of bytes that our packet will handle.
 MAX_BYTES = 100
+
+# Hexadecimal Address Length
 ADDRESS_LENGTH = 16
 
-# The first argument is the executable, Slave. Nothing is needed code-wise to handle this situation.
-
+# The first argument is the executable, Slave. Nothing is needed code-wise to handle this situation
+#           as it is handled outside the scope of the code in this file.
 # The second argument is the Master's host name.
 MasterHostName = sys.argv[1]
 
 # The third argument is the Master's port number.
 MasterPortNumber = sys.argv[2]
 OurGroupID = 22
-MagicNumber = 0x4A6F7921
+MagicNumber = "0x4A6F7921"
 
+
+# ------------------------- Global Methods -------------------------
+
+# Method name: bytesAND
+# Function: Performing an "unsigned char" operation for two's complement arithmetic.
+# Variables: bytesToTransform
+def bytesAND(byteToTransform):
+    return byteToTransform & 255
+
+
+# Method name: bitmask
+# Function: Select the bottom bits of the original value and shift left by
+#           24 bits to move it from the bottom 8 bits to the top.
+# Variables:
+def bitmask(bytesToMask):
+    return bytesToMask & 0x000000ff
+
+
+# Method names: getFirstByte and shiftFirstByte
+# Function: To shift 24 bits left or right to get the desired byte.
+# Variables: byte
+def getFirstByte(byte):
+    return byte >> 24
+
+
+def shiftFirstByte(byte):
+    return byte << 24
+
+
+# Method name: getSecondByte and shiftSecondByte
+# Function: To shift 16 bits left or right to get the desired byte.
+# Variables: byte
+def getSecondByte(byte):
+    return byte >> 16
+
+
+def shiftSecondByte(byte):
+    return byte << 16
+
+
+# Method name: getThirdByte and shiftThirdByte
+# Function: To shift 8 bits left or right to get the desired byte.
+# Variables: byte
+def getThirdByte(byte):
+    return byte >> 8
+
+
+def shiftThirdByte(byte):
+    return byte << 8
+
+
+# ------------------ Error Check Before Connecting -----------------
 # If the format: Slave | MasterHostName | MasterPortNumber is not followed, exit the system.
 if len(sys.argv) != 3:
     print("Invalid arguments. Try again.")
@@ -46,41 +100,18 @@ if MasterPortNumber < 0 or MasterPortNumber > 65535:
     print("Slave Error")
     sys.exit()
 
-
-# ------------------------- Global Methods -------------------------
-def bytesAND(byteToTransform):
-    return byteToTransform & 255
-
-def bitmask(bytesToMask):
-    return bytesToMask & 0x000000ff
-
-def getFirstByte(byte):
-    return byte >> 24
-
-def shiftFirstByte(byte):
-    return byte << 24
-
-def getSecondByte(byte):
-    return byte >> 16
-
-def shiftSecondByte(byte):
-    return byte << 16
-
-def getThirdByte(byte):
-    return byte >> 8
-
-def shiftThirdByte(byte):
-    return byte << 8
+# ----------------- Connecting Slave to the Master -----------------
+sock.connect((MasterHostName, MasterPortNumber))
 
 
 # ------------- Class To Handle Join Request Functions -------------
 # Class name: JoinRequest
 # Input: Bytes of data, specifically the request to join the node ring.
 # Variables: request, index
-
-
 class JoinRequest:
-    def __init__(self, bytesInRequest=[]):
+    def __init__(self, bytesInRequest=None):
+        if bytesInRequest is None:
+            bytesInRequest = []
         self.index = 0
         self.request = bytearray(bytesInRequest)
 
@@ -90,7 +121,8 @@ class JoinRequest:
     def getID(self):
         # Byte: Range from 0 to 255.
         # Source: https://stackoverflow.com/questions/32277760
-        #                /what-is-the-point-of-bitwise-and-ing-with-255-when-using-bitshifting-method-of-b
+        #                /what-is-the-point-of-bitwise-and-ing
+        #                -with-255-when-using-bitshifting-method-of-b
         dataByte = self.request[self.index] & 255
 
         # Shift the index so that it points to the next 4 bytes, such as the magic number.
@@ -100,19 +132,21 @@ class JoinRequest:
         return dataByte
 
     # Method name: packByte
-    # Function: This method does a bitwise AND operation with the byte to get the correct value and
-    #           appends the value to the Join Request.
+    # Function: This method does a bitwise AND operation with the byte to get the correct
+    #  value and appends the value to the Join Request.
     # Variables: dataByte, index
     def packByte(self, byteToPack):
         # 0x000000ff is the bit-mask
-        # Source: https://stackoverflow.com/questions/39719866/bit-masking-char0xffffffb8-0xff-doesnt-work-in-c
+        # Source: https://stackoverflow.com/questions/39719866/bit
+        #                 -masking-char0xffffffb8-0xff-doesnt-work-in-c
         dataByte = bitmask(byteToPack)
         self.request.append(dataByte)
         self.index += 1
 
     # Method name: getAllBytes
-    # Function:
-    # Variables:
+    # Function: This function shifts the bits in order to get the correct
+    #           indexes for byte extraction.
+    # Variables: index
     def getAllBytes(self):
         # Shift left by 3 bytes. This gets the first byte in the WORD.
         firstByte = shiftFirstByte(bytesAND(self.request[self.index]))
@@ -137,9 +171,10 @@ class JoinRequest:
         # Return WORD
         return allBytes
 
-    # Method name: getAllBytes
-    # Function:
-    # Variables:
+    # Method name: packAllBytes
+    # Function: This function packs the bytes into the message being used for the
+    #           join request.
+    # Variables: index
     def packAllBytes(self, bytesToPack):
         firstByte = getFirstByte(bytesToPack)
         self.request.append(firstByte)
@@ -158,72 +193,111 @@ class JoinRequest:
         self.index += 1
 
 
+# Create a join request and include our Group ID for the Master.
 request = JoinRequest()
+request.packByte(OurGroupID)
 
-# --------------------- Function: getAddress() ---------------------
-def getAddress():
-    return 0
+# int(value, base)
+# Base = 16 because of MagicNumber is Base 16, Hexadecimal
+# Include the magic number in the join request.
+request.packAllBytes(int(MagicNumber, 16))
 
-
-# ------------------------ Function: main() ------------------------
-def main(self, argv=[]):
-    self.position = 0
-    ##### Variables used by and in the Beej guide #####
-    sockfd = 0
-    numbytes = 0
-    rv = 0
-    master_port = 0
-    buffer = bytearray(MAX_BYTES)
-    s = bytearray(ADDRESS_LENGTH)
-
-    class structs:
-        def __init__(self):
-            # socket.addr
-            # self.hints
-            self.hints = 0
-
-    ##### Constants #####
-    # This is our group ID. Lab Group 22.
-    our_gid = 22
-    magic_number = 0x4A6F7921
-    magic_number_binary = struct.pack('>I', magic_number)
-
-    ##### General Variables #####
-    receivedGID = 0
-    received_MagicNumber = 0
-    received_nextSlaveIP = 0
-    myRID = 0
-    nextSlaveIP = 0
-    nextSlaveIP_String = bytearray(ADDRESS_LENGTH)
-    magicNumber_Struct = 0
-
-    ##### Packing Mechanism #####
-    # This is the data to be packed into the packet.
-    # The packet will be then packed into a frame for delivery.
-    message = struct.pack_into(our_gid, magic_number_binary)
-
-    rv = socket.getaddrinfo(argv[1], argv[2])
-
-    if (rv != 0):
-        print("Error, getaddrinfo() failed")
-
-    ##### Handling Response from Master #####
-    # //////// Insert methods here
-
-    ##### Printing Final Conclusions #####
-    # //////// Insert methods here
-    print("Group ID: %d \n", receivedGID)
-    print("Ring ID:  %d \n", myRID)
-    print("IP: %s \n", nextSlaveIP_String)
-    return 0
-
-# ----------------- Connecting Slave to the Master -----------------
-sock.connect((MasterHostName, MasterPortNumber))
-
-# Other steps needed in between here.
-
-# Need to put in values to send here.
+# Send the join request.
 sock.send(request.request)
 
+# ---------- Class To Handle Message Received From Master ----------
+# Class name: ConfirmMaster
+# Function: This class holds variables taken from JoinRequest (too crowded)
+#           and prints all information given back from the Master file.
+# Variables: GID, RID, IP
+class ConfirmMaster:
+
+    # Setup all Master variables
+    def __init__(self, confirmationMessage):
+        self.REQUEST = JoinRequest(self.CONFIRMATION)
+        self.MASTER_ID = self.REQUEST.getID()
+        self.RING_ID = self.REQUEST.getID()
+        self.MAGIC_NUMBER = self.REQUEST.getAllBytes()
+        self.NEXT_SLAVE_IP = self.REQUEST.getAllBytes()
+        self.CONFIRMATION = confirmationMessage
+
+    # Method name: print
+    # Function: This function prints the information as requested from the
+    #           Lab 2 specifications.
+    # Variables: GID, RID, IP
+    def print(self):
+        print("GID of the Master: ", self.MASTER_ID)
+        print("Own Ring ID: ", self.RING_ID)
+
+        # Source: https://stackoverflow.com/questions/9590965/
+        #         convert-an-ip-string-to-a-number-and-vice-versa
+        # Source User: Not_A_Golfer
+        print("IP Address in Dotted Decimal Form: ",
+              socket.inet_ntoa(struct.pack('!L', self.NEXT_SLAVE_IP)))
+
+
 # ----------------- Connecting Master to the Slave -----------------
+# Receives 4KB information.
 ConfirmationFromServer = sock.recv(4096)
+
+# Prints information extracted from the Master confirmation.
+# Uses Class: ConfirmMaster
+confirmation = ConfirmMaster(ConfirmationFromServer)
+confirmation.print()
+
+# ---------------------- METHODOLOGY ABANDONED ---------------------
+# This approach is discarded because Python does not have an entry point post-compilation
+# into a main() function like other popular OOP languages. Python instead reads the first
+# line of code and proceeds down. Archiving this in case we need it in the future but
+# there is no need to convert any kind of .C or .CPP code into Python like this.
+#
+# def main(self, argv=[]):
+#     self.position = 0
+#     ##### Variables used by and in the Beej guide #####
+#     sockfd = 0
+#     numbytes = 0
+#     rv = 0
+#     master_port = 0
+#     buffer = bytearray(MAX_BYTES)
+#     s = bytearray(ADDRESS_LENGTH)
+#
+#     class structs:
+#         def __init__(self):
+#             # socket.addr
+#             # self.hints
+#             self.hints = 0
+#
+#     ##### Constants #####
+#     # This is our group ID. Lab Group 22.
+#     our_gid = 22
+#     magic_number = 0x4A6F7921
+#     magic_number_binary = struct.pack('>I', magic_number)
+#
+#     ##### General Variables #####
+#     receivedGID = 0
+#     received_MagicNumber = 0
+#     received_nextSlaveIP = 0
+#     myRID = 0
+#     nextSlaveIP = 0
+#     nextSlaveIP_String = bytearray(ADDRESS_LENGTH)
+#     magicNumber_Struct = 0
+#
+#     ##### Packing Mechanism #####
+#     # This is the data to be packed into the packet.
+#     # The packet will be then packed into a frame for delivery.
+#     message = struct.pack_into(our_gid, magic_number_binary)
+#
+#     rv = socket.getaddrinfo(argv[1], argv[2])
+#
+#     if (rv != 0):
+#         print("Error, getaddrinfo() failed")
+#
+#     ##### Handling Response from Master #####
+#     # //////// Insert methods here
+#
+#     ##### Printing Final Conclusions #####
+#     # //////// Insert methods here
+#     print("Group ID: \n", receivedGID)
+#     print("Ring ID:  \n", myRID)
+#     print("IP: \n", nextSlaveIP_String)
+#     return 0
