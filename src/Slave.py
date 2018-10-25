@@ -46,25 +46,48 @@ if MasterPortNumber < 0 or MasterPortNumber > 65535:
     print("Slave Error")
     sys.exit()
 
-# ----------------- Connecting Slave to the Master -----------------
-sock.connect((MasterHostName, MasterPortNumber))
 
-# Other steps needed in between here.
+# ------------------------- Global Methods -------------------------
+def bytesAND(byteToTransform):
+    return byteToTransform & 255
 
-# Need to put in values to send here.
-sock.send()
+def bitmask(bytesToMask):
+    return bytesToMask & 0x000000ff
 
-# ----------------- Connecting Master to the Slave -----------------
-ConfirmationFromServer = sock.recv(4096)
+def getFirstByte(byte):
+    return byte >> 24
+
+def shiftFirstByte(byte):
+    return byte << 24
+
+def getSecondByte(byte):
+    return byte >> 16
+
+def shiftSecondByte(byte):
+    return byte << 16
+
+def getThirdByte(byte):
+    return byte >> 8
+
+def shiftThirdByte(byte):
+    return byte << 8
 
 
 # ------------- Class To Handle Join Request Functions -------------
-class JoinRequest:
-    def __init__(self, data=[]):
-        self.index = 0
-        self.request = bytearray(data)
+# Class name: JoinRequest
+# Input: Bytes of data, specifically the request to join the node ring.
+# Variables: request, index
 
-    def readIDs(self):
+
+class JoinRequest:
+    def __init__(self, bytesInRequest=[]):
+        self.index = 0
+        self.request = bytearray(bytesInRequest)
+
+    # Method name: getID
+    # Output: The first byte, or ID, in the request.
+    # Variables: request, index
+    def getID(self):
         # Byte: Range from 0 to 255.
         # Source: https://stackoverflow.com/questions/32277760
         #                /what-is-the-point-of-bitwise-and-ing-with-255-when-using-bitshifting-method-of-b
@@ -76,11 +99,66 @@ class JoinRequest:
         # Return the first byte, or the GID / RID.
         return dataByte
 
+    # Method name: packByte
+    # Function: This method does a bitwise AND operation with the byte to get the correct value and
+    #           appends the value to the Join Request.
+    # Variables: dataByte, index
+    def packByte(self, byteToPack):
+        # 0x000000ff is the bit-mask
+        # Source: https://stackoverflow.com/questions/39719866/bit-masking-char0xffffffb8-0xff-doesnt-work-in-c
+        dataByte = bitmask(byteToPack)
+        self.request.append(dataByte)
+        self.index += 1
+
+    # Method name: getAllBytes
+    # Function:
+    # Variables:
+    def getAllBytes(self):
+        # Shift left by 3 bytes. This gets the first byte in the WORD.
+        firstByte = shiftFirstByte(bytesAND(self.request[self.index]))
+        self.index += 1
+
+        # Shift left by 2 bytes. This gets the second byte in the WORD.
+        secondByte = shiftSecondByte(bytesAND(self.request[self.index]))
+        self.index += 1
+
+        # Shift left by a byte. This gets the third byte in the WORD.
+        thirdByte = shiftThirdByte(bytesAND(self.request[self.index]))
+        self.index += 1
+
+        # Do not shift at all. This gets the fourth byte in the WORD.
+        fourthByte = bytesAND(self.request[self.index])
+        self.index += 1
+
+        # All bytes combined. This creates the WORD given in the Request.
+        allBytes = (firstByte + secondByte
+                    + thirdByte + fourthByte)
+
+        # Return WORD
+        return allBytes
+
+    # Method name: getAllBytes
+    # Function:
+    # Variables:
+    def packAllBytes(self, bytesToPack):
+        firstByte = getFirstByte(bytesToPack)
+        self.request.append(firstByte)
+        self.index += 1
+
+        secondByte = bitmask(getSecondByte(bytesToPack))
+        self.request.append(secondByte)
+        self.index += 1
+
+        thirdByte = bitmask(getThirdByte(bytesToPack))
+        self.request.append(thirdByte)
+        self.index += 1
+
+        fourthByte = bitmask(bytesToPack)
+        self.request.append(fourthByte)
+        self.index += 1
 
 
-PackedMessage = JoinRequest()
-
-
+request = JoinRequest()
 
 # --------------------- Function: getAddress() ---------------------
 def getAddress():
@@ -138,3 +216,14 @@ def main(self, argv=[]):
     print("Ring ID:  %d \n", myRID)
     print("IP: %s \n", nextSlaveIP_String)
     return 0
+
+# ----------------- Connecting Slave to the Master -----------------
+sock.connect((MasterHostName, MasterPortNumber))
+
+# Other steps needed in between here.
+
+# Need to put in values to send here.
+sock.send(request.request)
+
+# ----------------- Connecting Master to the Slave -----------------
+ConfirmationFromServer = sock.recv(4096)
