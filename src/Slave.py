@@ -225,7 +225,7 @@ class ConfirmMaster:
         self.NEXT_SLAVE_IP = self.REQUEST.getAllBytes()
         self.CONFIRMATION = confirmationMessage
 
-    # Method name: print
+    # Method name: printEverything
     # Function: This function prints the information as requested from the
     #           Lab 2 specifications.
     # Variables: GID, RID, IP
