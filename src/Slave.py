@@ -229,7 +229,7 @@ class ConfirmMaster:
     # Function: This function prints the information as requested from the
     #           Lab 2 specifications.
     # Variables: GID, RID, IP
-    def print(self):
+    def printEverything(self):
         print("GID of the Master: ", self.MASTER_ID)
         print("Own Ring ID: ", self.RING_ID)
 
@@ -247,7 +247,7 @@ ConfirmationFromServer = sock.recv(4096)
 # Prints information extracted from the Master confirmation.
 # Uses Class: ConfirmMaster
 confirmation = ConfirmMaster(ConfirmationFromServer)
-confirmation.print()
+confirmation.printEverything()
 
 # ---------------------- METHODOLOGY ABANDONED ---------------------
 # This approach is discarded because Python does not have an entry point post-compilation
