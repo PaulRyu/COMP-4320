@@ -34,7 +34,7 @@ ADDRESS_LENGTH = 16
 MasterHostName = sys.argv[1]
 
 # The third argument is the Master's port number.
-MasterPortNumber = sys.argv[2]
+MasterPortNumber = int(sys.argv[2])
 
 # Lab Group 22
 OurGroupID = 22
