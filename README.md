@@ -13,8 +13,8 @@ DISCLAIMER: If you're also in our class this semester, don't bother looking at o
   
 </p>
 
-Data Structures Implemented: Socket, Python Server, Python Client, C Server, C Client\
-Languages Used: Python, C
+Data Structures Implemented: Socket, Python Server, Python Client, Java Server, Java Client\
+Languages Used: Python, Java
 
 > __Description__: 
 > _The objective of this lab is to create a 
@@ -25,7 +25,7 @@ ID 0 (zero). All the other nodes of the ring are slave nodes
 (clients) with a ring ID assigned by the master._
 
 > a) ___Slave Node Operations___ \
-Write a client (Slave.xxx) in any language other than Java, C, or C++. The Client must
+Write a client (Slave.py) in any language other than Java, C, or C++. The Client must
 >> i. accept a command line of the form: Slave MasterHostname MasterPort# where
 >>> 1. Slave is the executable,
 >>> 2. MasterHostname is the master’s hostname,
@@ -40,7 +40,7 @@ obtain its ring ID (myRID) from the master.
 format) of its next slave.
 
 > b) ___Master Node Operations___ \
-Write a Master (Master.c). The Master must
+Write a Master (Master.java). The Master must
 >>i. accept a command line of the form: Master MasterPort# where
 >>> 1. Master is your executable,
 >>> 2. MasterPort# is the port number (where the master must bind)
