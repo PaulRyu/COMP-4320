@@ -127,7 +127,7 @@ class JoinRequest:
         # Source: https://stackoverflow.com/questions/32277760
         #                /what-is-the-point-of-bitwise-and-ing
         #                -with-255-when-using-bitshifting-method-of-b
-        dataByte = self.request[self.index] & 255
+        dataByte = bytesAND(self.request[self.index])
 
         # Shift the index so that it points to the next 4 bytes, such as the magic number.
         self.index += 1
