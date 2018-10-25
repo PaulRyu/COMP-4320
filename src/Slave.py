@@ -59,11 +59,27 @@ ConfirmationFromServer = sock.recv(4096)
 
 
 # ------------- Class To Handle Join Request Functions -------------
-# Source: https://www.tutorialspoint.com/python/python_linked_lists.htm
 class JoinRequest:
     def __init__(self, data=[]):
         self.index = 0
-        self.buffer = bytearray(data)
+        self.request = bytearray(data)
+
+    def readIDs(self):
+        # Byte: Range from 0 to 255.
+        # Source: https://stackoverflow.com/questions/32277760
+        #                /what-is-the-point-of-bitwise-and-ing-with-255-when-using-bitshifting-method-of-b
+        dataByte = self.request[self.index] & 255
+
+        # Shift the index so that it points to the next 4 bytes, such as the magic number.
+        self.index += 1
+
+        # Return the first byte, or the GID / RID.
+        return dataByte
+
+
+
+PackedMessage = JoinRequest()
+
 
 
 # --------------------- Function: getAddress() ---------------------
