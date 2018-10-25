@@ -35,7 +35,11 @@ MasterHostName = sys.argv[1]
 
 # The third argument is the Master's port number.
 MasterPortNumber = sys.argv[2]
+
+# Lab Group 22
 OurGroupID = 22
+
+# Given Magic Number
 MagicNumber = "0x4A6F7921"
 
 
