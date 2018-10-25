@@ -51,7 +51,7 @@ public class Master {
 
 			//Debug print
 			System.out.println("Connected with " + slaveSocket.getInetAddress().getHostAddress()
-			    + " , port: " + clntSock.getPort() + "\n");
+			    + " , port: " + slaveSocket.getPort() + "\n");
 
 			//Get slave address info to update nextSlaveIP later
 			byte[] slaveAddress = slaveSocket.getInetAddress().getAddress();
