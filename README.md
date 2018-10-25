@@ -1,5 +1,7 @@
 <p align="center">
 
+DISCLAIMER: If you're also in our class this semester, don't bother looking at our code. We don't know what the hell we're doing either. Copy us if you want to get a 0 like we did the first lab. ;)
+
 # COMP-4320 Laboratory Assignment 2
 
 ## Auburn University | Fall 2018
