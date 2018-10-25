@@ -45,12 +45,13 @@ public class Master {
 			reply[1] = 0x4A;
 			reply[2] = 0x6F;
 			reply[3] = 0x79;
-           	reply[4] = 0x21;
+			reply[4] = 0x21;
 			request = new byte[BUFSIZE];
 			Socket slaveSocket = masterSocket.accept();
 
 			//Debug print
-			System.out.println("Connected with " + slaveSocket.getInetAddress().getHostAddress() + " , port: " + clntSock.getPort() + "\n");
+			System.out.println("Connected with " + slaveSocket.getInetAddress().getHostAddress()
+			    + " , port: " + clntSock.getPort() + "\n");
 
 			//Get slave address info to update nextSlaveIP later
 			byte[] slaveAddress = slaveSocket.getInetAddress().getAddress();
@@ -83,7 +84,7 @@ public class Master {
 			out.write(reply, 0, replyLength);
 
 			//Debug print
-            System.out.println("New slave added to ring, with ID: " + nextRID);
+			System.out.println("New slave added to ring, with ID: " + nextRID);
 
 			slaveSocket.close();
 		}
