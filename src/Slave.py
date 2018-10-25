@@ -218,12 +218,12 @@ class ConfirmMaster:
 
     # Setup all Master variables
     def __init__(self, confirmationMessage):
+        self.CONFIRMATION = confirmationMessage
         self.REQUEST = JoinRequest(self.CONFIRMATION)
         self.MASTER_ID = self.REQUEST.getID()
         self.RING_ID = self.REQUEST.getID()
         self.MAGIC_NUMBER = self.REQUEST.getAllBytes()
         self.NEXT_SLAVE_IP = self.REQUEST.getAllBytes()
-        self.CONFIRMATION = confirmationMessage
 
     # Method name: printEverything
     # Function: This function prints the information as requested from the
