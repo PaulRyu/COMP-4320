@@ -230,13 +230,16 @@ class ConfirmMaster:
     #           Lab 2 specifications.
     # Variables: GID, RID, IP
     def printEverything(self):
-        print('GID of the Master: ', self.MASTER_ID)
-        print('Own Ring ID: ', self.RING_ID)
+        # print("GID of the Master: ", self.MASTER_ID)
+        print("GID of the Master: %d" % self.MASTER_ID)
+
+        # print('Own Ring ID: ', self.RING_ID)
+        print("Own Ring ID: %d" % self.RING_ID)
 
         # Source: https://stackoverflow.com/questions/9590965/
         #         convert-an-ip-string-to-a-number-and-vice-versa
         # Source User: Not_A_Golfer
-        print('IP Address in Dotted Decimal Form: ',
+        print('IP Address in Dotted Decimal Form: %s' %
               socket.inet_ntoa(struct.pack('!L', self.NEXT_SLAVE_IP)))
 
 
