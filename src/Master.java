@@ -76,13 +76,24 @@ public class Master {
 		    // Accept Slave.py
             Socket sock = masterSocket.accept();
 
-            // Get the IP address of Slave.py
-            byte[] incomingAddress = sock.getInetAddress().getAddress();
+            // Get the NEXT_SLAVE_IP of Slave.py
+            byte[] incoming_NEXT_SLAVE_IP = sock.getInetAddress().getAddress();
 
+            // Get the IP address of Slave.py
+            String incomingHostAddress = sock.getInetAddress().getHostAddress();
+
+            // Get the port number of Slave.py
             int incomingPortNumber = sock.getPort();
 
             // Initialize a bytearray to be read from the Slave.py join request.
             requestFromSlave = new byte[32];
+
+            // Organize print statements to display to the screen the
+            // IP address of Slave.py and the Port Number of Slave.py
+            System.out.println(" ------------------------------------------------ ");
+            System.out.println("\nConnected to IP Address: " + incomingHostAddress
+                    + "\n"
+                    + "Port Number: " + incomingPortNumber + "\n");
 
 		    // Create a bytearray or message to send back to Slave.py
 			byte[] packedMessage = new byte[10];
@@ -93,40 +104,50 @@ public class Master {
 			packedMessage[3] = 0x79;
 			packedMessage[4] = 0x21;
 
-			//Debug print
-			System.out.println("Connected with " + incomingAddress
-			    + " , port: " + incomingPortNumber + "\n");
-
+			// Handle getting input from Slave.py
 			InputStream input = sock.getInputStream();
+
+			// Setup ability to give output to Slave.py
 			OutputStream output = sock.getOutputStream();
+
+			// Get input from Slave.py in a bytearray, size 32.
 			input.read(requestFromSlave);
 
-			//Debug print
-			System.out.println("Request:");
+			// Display the magic number from the bytearray
+			System.out.println("Magic Number: ");
 			System.out.print(requestFromSlave[0] + " ");
+
+			// Loop until the complete Magic Number bytes are attained.
 			for (int i = 1; i < 5; i++) {
 				System.out.print(Integer.toHexString((int)requestFromSlave[i]) + " ");
-				}
-			System.out.println();
+				} System.out.println("\n");
 
+			// Increment the number of slaves since a slave has been added to the ring.
 			NEXT_RING_ID++;
+
+			// Pack the message to send back to Slave.py
+            // The Group ID are the first few bytes.
 			byte GROUP_ID = requestFromSlave[0];
 			packedMessage[0] = GROUP_ID;
+
+			// Insert the RID and Slave IP AFTER the magic number.
 			packedMessage[5] = NEXT_RING_ID;
 			packedMessage[6] = NEXT_SLAVE_IP[0];
 			packedMessage[7] = NEXT_SLAVE_IP[1];
 			packedMessage[8] = NEXT_SLAVE_IP[2];
 			packedMessage[9] = NEXT_SLAVE_IP[3];
 
-			//Update NEXT_SLAVE_IP to slave address instead of master
-			NEXT_SLAVE_IP = incomingAddress;
+			// Join the nodes
+			NEXT_SLAVE_IP = incoming_NEXT_SLAVE_IP;
 
-            //End it all, on to the next one
+            // Complete, ready to close socket.
 			output.write(packedMessage, 0, 10);
 
-			//Debug print
-			System.out.println("New slave added to ring, with ID: " + NEXT_RING_ID);
+			// Display to the user that the slave was successfully added to the ring
+            // with the index counter.
+			System.out.println("Slave " + NEXT_RING_ID + " attached to node ring.\n");
 
+			// Close socket.
 			sock.close();
 		}
 	}
