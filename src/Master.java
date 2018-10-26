@@ -10,83 +10,124 @@
  *             the ring, the nodes on the ring MUST use only the ring to communicate. The ring is managed by a
  *             master which is part of the ring and has Ring ID 0 (zero). All the other nodes of the ring are slave
  *             nodes (clients) with a ring ID assigned by the master.
-*/
+ *
+ * Master Port Number = (Group ID % 30) * 5 + 10010
+ *      Step 1: 22 % 30 = 22
+ *      Step 2: 22 * 5  = 110
+ *      Step 3: 110 + 10010 = 10120
+ *      Result: 10120
+ *
+ *
+ * Compilation Instructions on the Tux Machines for This File (Group 22)
+ *      Step 1: javac Master.java
+ *      Step 2: java Master 10120
+ *
+ */
 
-import java.net.*;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.ServerSocket;
+//---------------------------------- Imports ----------------------------------
 import java.io.*;
+import java.net.*;
+import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.net.InetAddress;
+import java.net.ServerSocket;
 
+/*
+//------------------------------ Main Master Class ----------------------------
+// Class name: Master
+// Function: Main class, acts as the entry point for code and functions for Master.
+// Main variables: GID, RID, Port, SlaveIP
+*/
 public class Master {
-	private static final int BUFSIZE = 32; // Size of receive buffer
 
+	// Method name: main
+    // Function: main() function, entry point for arguments put into command line
+    // Behaviors: Open and close socket
 	public static void main(String[] args) throws IOException {
-		//Confirms correct arg
+
+        //------------------------------- Variables -------------------------------
+
+        // Initialize NEXT_RING_ID
+        byte NEXT_RING_ID = 0;
+
+        // A byte array sent as a byte array in Slave.py
+        byte[] requestFromSlave;
+
+        // https://stackoverflow.com/questions/9481865/getting-the
+        //         -ip-address-of-the-current-machine-using-java
+        // This obtains the IP of the current machine.
+        byte[] NEXT_SLAVE_IP = InetAddress.getLocalHost().getAddress();
+
+	    // Only the Master Port Number should be put into the command line.
 		if (args.length != 1) {
-			throw new IllegalArgumentException("");
+			throw new IllegalArgumentException("Invalid port number or too many arguments " +
+                                               "entered. Please try again.");
 		}
 
-		//Server socket setup
-		int masterPort = Integer.parseInt(args[0]);
-		ServerSocket masterSocket = new ServerSocket(masterPort);
+		// Convert the Port Number entered in: java Master 10120
+		int masterPortNumber = Integer.parseInt(args[0]);
 
-        //Variables
-        byte nextRID = 0;
-        byte[] nextSlaveIP = InetAddress.getLocalHost().getAddress();
-        byte[] request;
+		// Create new socket in Java
+		ServerSocket masterSocket = new ServerSocket(masterPortNumber);
 
-
-        //Continuous loop for slave connections
+        // Loop infinitely until new Slaves (Nodes) send join requests for the ring.
 		while(true) {
-			int replyLength = 10;
-			byte[] reply = new byte[replyLength];
-			reply[1] = 0x4A;
-			reply[2] = 0x6F;
-			reply[3] = 0x79;
-			reply[4] = 0x21;
-			request = new byte[BUFSIZE];
-			Socket slaveSocket = masterSocket.accept();
+
+		    // Accept Slave.py
+            Socket sock = masterSocket.accept();
+
+            // Get the IP address of Slave.py
+            byte[] incomingAddress = sock.getInetAddress().getAddress();
+
+            int incomingPortNumber = sock.getPort();
+
+            // Initialize a bytearray to be read from the Slave.py join request.
+            requestFromSlave = new byte[32];
+
+		    // Create a bytearray or message to send back to Slave.py
+			byte[] packedMessage = new byte[10];
+
+			// Pack the magic number in four parts due to it being hexadecimal.
+			packedMessage[1] = 0x4A;
+			packedMessage[2] = 0x6F;
+			packedMessage[3] = 0x79;
+			packedMessage[4] = 0x21;
 
 			//Debug print
-			System.out.println("Connected with " + slaveSocket.getInetAddress().getHostAddress()
-			    + " , port: " + slaveSocket.getPort() + "\n");
+			System.out.println("Connected with " + incomingAddress
+			    + " , port: " + incomingPortNumber + "\n");
 
-			//Get slave address info to update nextSlaveIP later
-			byte[] slaveAddress = slaveSocket.getInetAddress().getAddress();
-
-			InputStream in = slaveSocket.getInputStream();
-			OutputStream out = slaveSocket.getOutputStream();
-			in.read(request);
+			InputStream input = sock.getInputStream();
+			OutputStream output = sock.getOutputStream();
+			input.read(requestFromSlave);
 
 			//Debug print
 			System.out.println("Request:");
-			System.out.print(request[0] + " ");
+			System.out.print(requestFromSlave[0] + " ");
 			for (int i = 1; i < 5; i++) {
-				System.out.print(Integer.toHexString((int)request[i]) + " ");
+				System.out.print(Integer.toHexString((int)requestFromSlave[i]) + " ");
 				}
 			System.out.println();
 
-			nextRID++;
-			byte GID = request[0];
-			reply[0] = GID;
-			reply[5] = nextRID;
-			reply[6] = nextSlaveIP[0];
-			reply[7] = nextSlaveIP[1];
-			reply[8] = nextSlaveIP[2];
-			reply[9] = nextSlaveIP[3];
+			NEXT_RING_ID++;
+			byte GROUP_ID = requestFromSlave[0];
+			packedMessage[0] = GROUP_ID;
+			packedMessage[5] = NEXT_RING_ID;
+			packedMessage[6] = NEXT_SLAVE_IP[0];
+			packedMessage[7] = NEXT_SLAVE_IP[1];
+			packedMessage[8] = NEXT_SLAVE_IP[2];
+			packedMessage[9] = NEXT_SLAVE_IP[3];
 
-			//Update nextSlaveIP to slave address instead of master
-			nextSlaveIP = slaveAddress;
+			//Update NEXT_SLAVE_IP to slave address instead of master
+			NEXT_SLAVE_IP = incomingAddress;
 
             //End it all, on to the next one
-			out.write(reply, 0, replyLength);
+			output.write(packedMessage, 0, 10);
 
 			//Debug print
-			System.out.println("New slave added to ring, with ID: " + nextRID);
+			System.out.println("New slave added to ring, with ID: " + NEXT_RING_ID);
 
-			slaveSocket.close();
+			sock.close();
 		}
 	}
 }
