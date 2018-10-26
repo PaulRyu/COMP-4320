@@ -242,6 +242,8 @@ class ConfirmMaster:
         print('IP Address in Dotted Decimal Form: %s' %
               socket.inet_ntoa(struct.pack('!L', self.NEXT_SLAVE_IP)))
 
+        print(" ")
+
 
 # ----------------- Connecting Master to the Slave -----------------
 # Receives 4KB information.
