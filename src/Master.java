@@ -40,11 +40,9 @@ import java.net.ServerSocket;
 */
 public class Master {
 
-	/*
-    Method name: main
-    Function: main() function, entry point for arguments put into command line
-    Behaviors: Open and close socket
-    */
+    // Method name: main
+    // Function: main() function, entry point for arguments put into command line
+    // Behaviors: Open and close socket
     public static void main(String[] args) throws IOException {
 
         //------------------------------- Variables -------------------------------
@@ -55,29 +53,27 @@ public class Master {
         // A byte array sent as a byte array in Slave.py
         byte[] requestFromSlave;
 
-        /*
-        https://stackoverflow.com/questions/9481865/getting-the
-            -ip-address-of-the-current-machine-using-java
-            This obtains the IP of the current machine.
-        */
+        // https://stackoverflow.com/questions/9481865/getting-the
+        //         -ip-address-of-the-current-machine-using-java
+        // This obtains the IP of the current machine.
         byte[] NEXT_SLAVE_IP = InetAddress.getLocalHost().getAddress();
 
-	    // Only the Master Port Number should be put into the command line.
-		if (args.length != 1) {
-			throw new IllegalArgumentException("Invalid port number or too many arguments " +
-                                               "entered. Please try again.");
-		}
+        // Only the Master Port Number should be put into the command line.
+        if (args.length != 1) {
+            throw new IllegalArgumentException("Invalid port number or too many arguments " +
+                    "entered. Please try again.");
+        }
 
-		// Convert the Port Number entered in: java Master 10120
-		int masterPortNumber = Integer.parseInt(args[0]);
+        // Convert the Port Number entered in: java Master 10120
+        int masterPortNumber = Integer.parseInt(args[0]);
 
-		// Create new socket in Java
-		ServerSocket masterSocket = new ServerSocket(masterPortNumber);
+        // Create new socket in Java
+        ServerSocket masterSocket = new ServerSocket(masterPortNumber);
 
-        /* Loop infinitely until new Slaves (Nodes) send join requests for the ring. */
-		while(true) {
+        // Loop infinitely until new Slaves (Nodes) send join requests for the ring.
+        while(true) {
 
-		    // Accept Slave.py
+            // Accept Slave.py
             Socket sock = masterSocket.accept();
 
             // Get the NEXT_SLAVE_IP of Slave.py
@@ -92,73 +88,67 @@ public class Master {
             // Initialize a bytearray to be read from the Slave.py join request.
             requestFromSlave = new byte[32];
 
-            /*
-            Organize print statements to display to the screen the
-                IP address of Slave.py and the Port Number of Slave.py
-            */
+            // Organize print statements to display to the screen the
+            // IP address of Slave.py and the Port Number of Slave.py
             System.out.println(" ------------------------------------------------ ");
             System.out.println("\nConnected to IP Address: " + incomingHostAddress
                     + "\n"
                     + "Port Number: " + incomingPortNumber + "\n");
 
             // Create a bytearray or message to send back to Slave.py
-			byte[] packedMessage = new byte[10];
+            byte[] packedMessage = new byte[10];
 
-			// Pack the magic number in four parts due to it being hexadecimal.
-			packedMessage[1] = 0x4A;
-			packedMessage[2] = 0x6F;
-			packedMessage[3] = 0x79;
-			packedMessage[4] = 0x21;
+            // Pack the magic number in four parts due to it being hexadecimal.
+            packedMessage[1] = 0x4A;
+            packedMessage[2] = 0x6F;
+            packedMessage[3] = 0x79;
+            packedMessage[4] = 0x21;
 
-			// Handle getting input from Slave.py
-			InputStream input = sock.getInputStream();
+            // Handle getting input from Slave.py
+            InputStream input = sock.getInputStream();
 
-			// Setup ability to give output to Slave.py
-			OutputStream output = sock.getOutputStream();
+            // Setup ability to give output to Slave.py
+            OutputStream output = sock.getOutputStream();
 
-			// Get input from Slave.py in a bytearray, size 32.
-			input.read(requestFromSlave);
+            // Get input from Slave.py in a bytearray, size 32.
+            input.read(requestFromSlave);
 
-			// Display the magic number from the bytearray
-			System.out.println("Magic Number: ");
-			System.out.print(requestFromSlave[0] + " ");
+            // Display the magic number from the bytearray
+            System.out.println("Magic Number: ");
+            System.out.print(requestFromSlave[0] + " ");
 
-			// Loop until the complete Magic Number bytes are attained.
-			for (int i = 1; i < 5; i++) {
-				System.out.print(Integer.toHexString((int)requestFromSlave[i]) + " ");
-				} System.out.println("\n");
+            // Loop until the complete Magic Number bytes are attained.
+            for (int i = 1; i < 5; i++) {
+                System.out.print(Integer.toHexString((int)requestFromSlave[i]) + " ");
+            } System.out.println("\n");
 
-			// Increment the number of slaves since a slave has been added to the ring.
-			NEXT_RING_ID++;
+            // Increment the number of slaves since a slave has been added to the ring.
+            NEXT_RING_ID++;
 
-			/*
-            Pack the message to send back to Slave.py
-            The Group ID are the first few bytes.
-            */
+            // Pack the message to send back to Slave.py
+            // The Group ID are the first few bytes.
             byte GROUP_ID = requestFromSlave[0];
-			packedMessage[0] = GROUP_ID;
+            packedMessage[0] = GROUP_ID;
 
-			// Insert the RID and Slave IP AFTER the magic number.
-			packedMessage[5] = NEXT_RING_ID;
-			packedMessage[6] = NEXT_SLAVE_IP[0];
-			packedMessage[7] = NEXT_SLAVE_IP[1];
-			packedMessage[8] = NEXT_SLAVE_IP[2];
-			packedMessage[9] = NEXT_SLAVE_IP[3];
+            // Insert the RID and Slave IP AFTER the magic number.
+            packedMessage[5] = NEXT_RING_ID;
+            packedMessage[6] = NEXT_SLAVE_IP[0];
+            packedMessage[7] = NEXT_SLAVE_IP[1];
+            packedMessage[8] = NEXT_SLAVE_IP[2];
+            packedMessage[9] = NEXT_SLAVE_IP[3];
 
-			// Join the nodes
-			NEXT_SLAVE_IP = incoming_NEXT_SLAVE_IP;
+            // Join the nodes
+            NEXT_SLAVE_IP = incoming_NEXT_SLAVE_IP;
 
             // Complete, ready to close socket.
-			output.write(packedMessage, 0, 10);
+            output.write(packedMessage, 0, 10);
 
-			/*
-            Display to the user that the slave was successfully added to the ring
-                with the index counter.
-            */
+            // Display to the user that the slave was successfully added to the ring
+            // with the index counter.
             System.out.println("Slave " + NEXT_RING_ID + " attached to node ring.\n");
 
-			// Close socket.
-			sock.close();
-		}
-	}
+            // Close socket.
+            sock.close();
+        }
+    }
 }
