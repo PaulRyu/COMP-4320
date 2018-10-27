@@ -95,7 +95,7 @@ public class Master {
                     + "\n"
                     + "Port Number: " + incomingPortNumber + "\n");
 
-		    // Create a bytearray or message to send back to Slave.py
+            // Create a bytearray or message to send back to Slave.py
 			byte[] packedMessage = new byte[10];
 
 			// Pack the magic number in four parts due to it being hexadecimal.
@@ -144,7 +144,7 @@ public class Master {
 			output.write(packedMessage, 0, 10);
 
 			// Display to the user that the slave was successfully added to the ring
-            // with the index counter.
+            //      with the index counter.
 			System.out.println("Slave " + NEXT_RING_ID + " attached to node ring.\n");
 
 			// Close socket.
