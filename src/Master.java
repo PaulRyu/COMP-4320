@@ -40,10 +40,12 @@ import java.net.ServerSocket;
 */
 public class Master {
 
-	// Method name: main
-    // Function: main() function, entry point for arguments put into command line
-    // Behaviors: Open and close socket
-	public static void main(String[] args) throws IOException {
+	/*
+    Method name: main
+    Function: main() function, entry point for arguments put into command line
+    Behaviors: Open and close socket
+    */
+    public static void main(String[] args) throws IOException {
 
         //------------------------------- Variables -------------------------------
 
@@ -53,9 +55,11 @@ public class Master {
         // A byte array sent as a byte array in Slave.py
         byte[] requestFromSlave;
 
-        // https://stackoverflow.com/questions/9481865/getting-the
-        //         -ip-address-of-the-current-machine-using-java
-        // This obtains the IP of the current machine.
+        /*
+        https://stackoverflow.com/questions/9481865/getting-the
+            -ip-address-of-the-current-machine-using-java
+            This obtains the IP of the current machine.
+        */
         byte[] NEXT_SLAVE_IP = InetAddress.getLocalHost().getAddress();
 
 	    // Only the Master Port Number should be put into the command line.
@@ -70,7 +74,7 @@ public class Master {
 		// Create new socket in Java
 		ServerSocket masterSocket = new ServerSocket(masterPortNumber);
 
-        // Loop infinitely until new Slaves (Nodes) send join requests for the ring.
+        /* Loop infinitely until new Slaves (Nodes) send join requests for the ring. */
 		while(true) {
 
 		    // Accept Slave.py
@@ -88,8 +92,10 @@ public class Master {
             // Initialize a bytearray to be read from the Slave.py join request.
             requestFromSlave = new byte[32];
 
-            // Organize print statements to display to the screen the
-            // IP address of Slave.py and the Port Number of Slave.py
+            /*
+            Organize print statements to display to the screen the
+                IP address of Slave.py and the Port Number of Slave.py
+            */
             System.out.println(" ------------------------------------------------ ");
             System.out.println("\nConnected to IP Address: " + incomingHostAddress
                     + "\n"
@@ -125,9 +131,11 @@ public class Master {
 			// Increment the number of slaves since a slave has been added to the ring.
 			NEXT_RING_ID++;
 
-			// Pack the message to send back to Slave.py
-            // The Group ID are the first few bytes.
-			byte GROUP_ID = requestFromSlave[0];
+			/*
+            Pack the message to send back to Slave.py
+            The Group ID are the first few bytes.
+            */
+            byte GROUP_ID = requestFromSlave[0];
 			packedMessage[0] = GROUP_ID;
 
 			// Insert the RID and Slave IP AFTER the magic number.
@@ -143,9 +151,11 @@ public class Master {
             // Complete, ready to close socket.
 			output.write(packedMessage, 0, 10);
 
-			// Display to the user that the slave was successfully added to the ring
-            //      with the index counter.
-			System.out.println("Slave " + NEXT_RING_ID + " attached to node ring.\n");
+			/*
+            Display to the user that the slave was successfully added to the ring
+                with the index counter.
+            */
+            System.out.println("Slave " + NEXT_RING_ID + " attached to node ring.\n");
 
 			// Close socket.
 			sock.close();
