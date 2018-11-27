@@ -66,7 +66,6 @@ def bitmask(bytesToMask):
 def getFirstByte(byte):
     return byte >> 24
 
-
 def shiftFirstByte(byte):
     return byte << 24
 
@@ -77,7 +76,6 @@ def shiftFirstByte(byte):
 def getSecondByte(byte):
     return byte >> 16
 
-
 def shiftSecondByte(byte):
     return byte << 16
 
@@ -87,7 +85,6 @@ def shiftSecondByte(byte):
 # Variables: byte
 def getThirdByte(byte):
     return byte >> 8
-
 
 def shiftThirdByte(byte):
     return byte << 8
