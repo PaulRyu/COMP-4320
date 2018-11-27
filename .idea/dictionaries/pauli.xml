@@ -2,8 +2,53 @@
   <dictionary name="pauli">
     <words>
       <w>abriana</w>
+      <w>addrinfo</w>
+      <w>addrlen</w>
+      <w>addrstrlen</w>
+      <w>arpa</w>
+      <w>beej</w>
+      <w>biaz</w>
       <w>bitmask</w>
+      <w>bitshifting</w>
+      <w>bytearray</w>
       <w>fornis</w>
+      <w>fprintf</w>
+      <w>freeaddrinfo</w>
+      <w>getaddrinfo</w>
+      <w>inet</w>
+      <w>maxbuflen</w>
+      <w>maxdatasize</w>
+      <w>memset</w>
+      <w>myport</w>
+      <w>netdb</w>
+      <w>netinet</w>
+      <w>ntoa</w>
+      <w>ntop</w>
+      <w>numbytes</w>
+      <w>perror</w>
+      <w>portnum</w>
+      <w>recvfrom</w>
+      <w>saad</w>
+      <w>sendto</w>
+      <w>serverport</w>
+      <w>servinfo</w>
+      <w>setsockopt</w>
+      <w>sigaction</w>
+      <w>sigemptyset</w>
+      <w>sockaddr</w>
+      <w>sockfd</w>
+      <w>socklen</w>
+      <w>socktype</w>
+      <w>strerror</w>
+      <w>strlen</w>
+      <w>structs</w>
+      <w>tdisplay</w>
+      <w>udisplay</w>
+      <w>unistd</w>
+      <w>unspec</w>
+      <w>uptest</w>
+      <w>waitpid</w>
+      <w>wnohang</w>
     </words>
   </dictionary>
 </component>
