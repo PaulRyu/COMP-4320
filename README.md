@@ -2,7 +2,7 @@
 
 DISCLAIMER: If you're also in our class this semester, don't bother looking at our code. We don't know what the hell we're doing either. Copy us if you want to get a 0 like we did the first lab. ;)
 
-# COMP-4320 Laboratory Assignment 2
+# COMP-4320 Laboratory Assignment 2 and 3
 
 ## Auburn University | Fall 2018
 
@@ -39,6 +39,14 @@ obtain its ring ID (myRID) from the master.
 >> iv. Display the GID of the master, its own ring ID, and the IP address (in dotted decimal
 format) of its next slave.
 
+>>v. (Lab 3 only), repeatedly prompt the user for a ring ID RID and a message m.
+
+>>vi. (Lab 3 only), send the message m to the trusted node with ring ID RID following
+the protocol described below.
+>>> 1. (Lab 3 only), display any message received in a packet that contains ring ID myRID.
+>>> 2. (Lab 3 only), forward any message destined to a node that has a ring ID different from myRID. 
+Forward only message with a TTL (time to live) higher than 1.
+
 > b) ___Master Node Operations___ \
 Write a Master (Master.java). The Master must
 >>i. accept a command line of the form: Master MasterPort# where
@@ -57,12 +65,12 @@ the master is running. Whenever a slave S joins the ring, the master will send i
 IP address contained in Variable nextSlaveID and will set its variable nextSlaveIP to
 the IP address of Node S (who just requested to join).
 
->> iii. (For Phase 2 only), repeatedly prompt the user to ask a ring ID RID and a message m.
+>> iii. (Lab 3 only), repeatedly prompt the user to ask a ring ID RID and a message m.
 
->> iv. (For Phase 2 only), send the message m to the trusted node with ring ID RID
+>> iv. (Lab 3 only), send the message m to the trusted node with ring ID RID
 following the protocol described below.
 
->> v. (For Phase 2 only), display any message received in a packet that contains ring ID 0.
+>> v. (Lab 3 only), display any message received in a packet that contains ring ID 0.
 
->> vi. (For Phase 2 only), forward any message destined to a node that has an RID
+>> vi. (Lab 3 only), forward any message destined to a node that has an RID
 different from myRID.
