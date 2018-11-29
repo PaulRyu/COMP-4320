@@ -332,6 +332,7 @@ class CheckSum:
         self.message = self.REQUEST.readMessage(len(self.REQUEST.request) - 1)
         self.CHECKSUMS = self.REQUEST.getID()
 
+    # Setting off static errors, make sure if this can be used as a class method.
     def getCheckSum(self):
         checksum = 0
         message = Message.createMessage()
