@@ -13,6 +13,7 @@
 
 
 # ---------------------------- Imports ----------------------------
+import _thread
 import socket
 import sys
 import struct
@@ -106,11 +107,8 @@ if len(sys.argv) != 3:
 
 # Check if the Master Port Number is between 0 and 65535.
 if MasterPortNumber < 0 or MasterPortNumber > 65535:
-    print("Slave Error")
+    print("Invalid port number. Please try again.")
     sys.exit()
-
-# ----------------- Connecting Slave to the Master -----------------
-sock.connect((MasterHostName, MasterPortNumber))
 
 
 # # TODO (Phase 2 only), repeatedly prompt the user for a ring ID RID and a message m.
@@ -140,6 +138,10 @@ class JoinRequest:
             bytesInRequest = []
         self.index = 0
         self.request = bytearray(bytesInRequest)
+
+    def printAll(self):
+        for elem in self.request:
+            print(elem)
 
     # Method name: getID
     # Output: The first byte, or ID, in the request.
@@ -242,19 +244,6 @@ class JoinRequest:
             self.index += 1
 
 
-# Create a join request and include our Group ID for the Master.
-request = JoinRequest()
-request.packByte(OurGroupID)
-
-# int(value, base)
-# Base = 16 because of MagicNumber is Base 16, Hexadecimal
-# Include the magic number in the join request.
-request.packAllBytes(int(MagicNumber, 16))
-
-# Send the join request.
-sock.send(request.request)
-
-
 # ---------- Class To Handle Message Received From Master ----------
 # Class name: ConfirmMaster
 # Function: This class holds variables taken from JoinRequest (too crowded)
@@ -329,8 +318,8 @@ def getCheckSum():
     # TODO Delete only if sure this is 100% debugged.
     # Replace here if necessary ---- STILL DEBUGGING ----
     # checksum = 0
-    for x, y in enumerate(message.request):
-        if x == len(message.request) - 1:
+    for a, y in enumerate(message.request):
+        if a == len(message.request) - 1:
             continue
 
         checksum += bitmask(y)
@@ -370,9 +359,10 @@ class MessageConstruction:
         self.MAGIC_NUMBER = self.message.MAGIC_NUMBER
         self.TIME_TO_LIVE = 255
         self.ARRIVAL_NODE = self.message.RING_ID
-        self.CHECKSUMS = 144
-        self.CHECKSUMS = getCheckSum()
-        self.REQUEST = self.createMessage()
+        # self.CHECKSUMS = 144
+        # self.CHECKSUMS = getCheckSum()
+        # self.REQUEST = self.createMessage()
+        self.CHECKSUMS = 0
 
     def createMessage(self):
         finalMessage = JoinRequest(bytesInRequest=[])
@@ -387,9 +377,58 @@ class MessageConstruction:
 
 
 # TODO implement listening Slave class / functions
-def listen():
-    return 0
+def listen(multiThread, timeToDelay, masterName, portNumber, ringID, slaveIP):
+    so = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    master = (masterName, portNumber)
+    so.bind(master)
 
+    while 1:
+        information, _ = so.recvfrom(4096)
+        message = Message(information)
+        rawChecksum = message.CHECKSUMS
+        checksum = getCheckSum()
+        if rawChecksum == checksum:
+            if message.DESTINATION_NODE == ringID:
+                print("Message received: " + str(message.message))
+            else:
+                message.TIME_TO_LIVE -= 1
+                if message.TIME_TO_LIVE < 2:
+                    print("Message not accepted. Try again.")
+                else:
+                    message.CHECKSUMS = getCheckSum()
+                    FORMATTED_IP_ADDRESS = socket.inet_ntoa(struct.pack('!L', slaveIP))
+                    nextRingIP = (FORMATTED_IP_ADDRESS, portNumber - 1)
+
+                    # https://docs.python.org/2/library/socket.html#socket.socket.send
+                    # socket.sendto(string, address)
+                    # Send data to the socket. The socket should not be connected to a
+                    # remote socket, since the destination socket is specified by address.
+                    # The optional flags argument has the same meaning as for recv() above.
+                    # Return the number of bytes sent.
+                    # TODO: test both
+                    so.sendto(message.createMessage().request, nextRingIP)
+        else:
+            print("Checksum numbers" + str(rawChecksum) + " and "
+                  + str(checksum) + " do not match. Please try again.")
+
+            # This produces a type error.. even though str is a parameter as shown above.
+            # s.sendto(str(message.createMessage().request), nextRingIP)
+
+
+# ----------------- Connecting Slave to the Master -----------------
+sock.connect((MasterHostName, MasterPortNumber))
+
+# Create a join request and include our Group ID for the Master.
+request = JoinRequest()
+request.packByte(OurGroupID)
+
+# int(value, base)
+# Base = 16 because of MagicNumber is Base 16, Hexadecimal
+# Include the magic number in the join request.
+request.packAllBytes(int(MagicNumber, 16))
+
+# Send the join request.
+sock.send(request.request)
 
 # ----------------- Connecting Master to the Slave -----------------
 # Receives 4KB information.
@@ -399,6 +438,34 @@ ConfirmationFromServer = sock.recv(4096)
 # Uses Class: ConfirmMaster
 confirmation = ConfirmMaster(ConfirmationFromServer)
 confirmation.printEverything()
+
+try:
+    _thread.start_new_thread(listen, (" ", 4, MasterHostName,
+                                      (10010 + confirmation.MASTER_ID
+                                       * 5 + confirmation.MASTER_ID)),
+                             # TODO: Unexpected error bug.
+                             confirmation.RING_ID, confirmation.NEXT_SLAVE_IP)
+except:
+    print("Cannot start thread. Please run again.")
+
+while 1:
+    try:
+        ri = input("Enter the node's Ring ID: ")
+        RingID = int(ri)
+        messageToSend = input("Enter your message here: ")
+        constructedMessage = MessageConstruction(confirmation, RingID, messageToSend)
+        constructedMessage.CHECKSUMS = getCheckSum()
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        FORMATTED_IP_ADDRESS = socket.inet_ntoa(struct.pack('!L', confirmation.NEXT_SLAVE_IP))
+
+        SUCCESS = s.sendto((str(constructedMessage.createMessage().request)),
+                           ((FORMATTED_IP_ADDRESS,
+                             (10010 + confirmation.MASTER_ID * 5 + confirmation.MASTER_ID)) - 1))
+
+        print("Sending message... ")
+    except ValueError as x:
+        print("Invalid Node Ring ID. Please try again.")
 
 # ---------------------- METHODOLOGY ABANDONED ---------------------
 # This approach is discarded because Python does not have an entry point post-compilation
