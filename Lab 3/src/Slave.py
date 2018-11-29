@@ -134,8 +134,10 @@ class JoinRequest:
     #     self.request = bytearray(bytesInRequest)
 
     def __init__(self, bytesInRequest=None):
+        # if bytesInRequest is None:
+        #     bytesInRequest = 100 * [0]
         if bytesInRequest is None:
-            bytesInRequest = 100 * [0]
+            bytesInRequest = []
         self.index = 0
         self.request = bytearray(bytesInRequest)
 
@@ -261,9 +263,9 @@ sock.send(request.request)
 class ConfirmMaster:
 
     # Setup all Master variables
-    def __init__(self, confirmationMessage):
-        self.confirmationMessage = confirmationMessage
-        self.REQUEST = JoinRequest(self.confirmationMessage)
+    def __init__(self, message):
+        self.message = message
+        self.REQUEST = JoinRequest(self.message)
         self.MASTER_ID = self.REQUEST.getID()
         self.MAGIC_NUMBER = self.REQUEST.getAllBytes()
         self.RING_ID = self.REQUEST.getID()
@@ -309,7 +311,7 @@ class Message:
         self.CHECKSUMS = self.REQUEST.getID()
 
     def createMessage(self):
-        finalMessage = JoinRequest()
+        finalMessage = JoinRequest(bytesInRequest=[])
         finalMessage.packByte(self.MASTER_ID)
         finalMessage.packAllBytes(self.MAGIC_NUMBER)
         finalMessage.packByte(self.TIME_TO_LIVE)
@@ -318,6 +320,29 @@ class Message:
         finalMessage.packMessage(self.message)
         finalMessage.packByte(self.CHECKSUMS)
         return finalMessage
+
+
+def getCheckSum():
+    checksum = 0
+    message = Message.createMessage()
+
+    # TODO Delete only if sure this is 100% debugged.
+    # Replace here if necessary ---- STILL DEBUGGING ----
+    # checksum = 0
+    for x, y in enumerate(message.request):
+        if x == len(message.request) - 1:
+            continue
+
+        checksum += bitmask(y)
+
+        errorStatus = bitmask(getThirdByte(checksum))
+
+        if errorStatus > 0:
+            convertIntLiteral(checksum)
+            checksum += errorStatus
+
+    checksum = bitmask((~checksum))
+    return bitmask(checksum)
 
 
 class CheckSum:
@@ -333,31 +358,32 @@ class CheckSum:
         self.CHECKSUMS = self.REQUEST.getID()
 
     # Setting off static errors, make sure if this can be used as a class method.
-    def getCheckSum(self):
-        checksum = 0
-        message = Message.createMessage()
-        firstBytes = bytearray()
-        for x in range(0, len(message.request) - 2):
-            firstBytes.append(message.request[x])
-
-        # TODO Delete only if sure this is 100% debugged.
-        # Replace here if necessary ---- STILL DEBUGGING ----
-        # checksum = 0
-        for y in firstBytes:
-
-            checksum += convertIntLiteral(y)
-
-            errorStatus = bitmask(getThirdByte(checksum))
-
-            if errorStatus > 0:
-                convertIntLiteral(checksum)
-                checksum += errorStatus
-
-        checksum = bitmask((~checksum))
-        return bitmask(checksum)
 
 
+class MessageConstruction:
+    def __init__(self, message, destinationNode, confirmation):
+        self.message = message
+        self.DESTINATION_NODE = destinationNode
+        self.CONFIRMATION = confirmation
 
+        self.MASTER_ID = self.message.MASTER_ID
+        self.MAGIC_NUMBER = self.message.MAGIC_NUMBER
+        self.TIME_TO_LIVE = 255
+        self.ARRIVAL_NODE = self.message.RING_ID
+        self.CHECKSUMS = 144
+        self.CHECKSUMS = getCheckSum()
+        self.REQUEST = self.createMessage()
+
+    def createMessage(self):
+        finalMessage = JoinRequest(bytesInRequest=[])
+        finalMessage.packByte(self.MASTER_ID)
+        finalMessage.packAllBytes(self.MAGIC_NUMBER)
+        finalMessage.packByte(self.TIME_TO_LIVE)
+        finalMessage.packByte(self.DESTINATION_NODE)
+        finalMessage.packByte(self.ARRIVAL_NODE)
+        finalMessage.packMessage(self.message)
+        finalMessage.packByte(self.CHECKSUMS)
+        return finalMessage
 
 
 # TODO implement listening Slave class / functions
