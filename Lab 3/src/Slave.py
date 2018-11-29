@@ -108,13 +108,13 @@ if MasterPortNumber < 0 or MasterPortNumber > 65535:
 sock.connect((MasterHostName, MasterPortNumber))
 
 
-# TODO (Phase 2 only), repeatedly prompt the user for a ring ID RID and a message m.
-RID_AND_MSG_RECEIVED = False
-userRingID = ""
-userMessage = ""
-while not RID_AND_MSG_RECEIVED:
-    # TODO Need to implement getting input from the user
-    print("debug")
+# # TODO (Phase 2 only), repeatedly prompt the user for a ring ID RID and a message m.
+# RID_AND_MSG_RECEIVED = False
+# userRingID = ""
+# userMessage = ""
+# while not RID_AND_MSG_RECEIVED:
+#     # TODO Need to implement getting input from the user
+#     print("debug")
 
 
 # ------------- Class To Handle Join Request Functions -------------
@@ -122,9 +122,15 @@ while not RID_AND_MSG_RECEIVED:
 # Input: Bytes of data, specifically the request to join the node ring.
 # Variables: request, index
 class JoinRequest:
+    # def __init__(self, bytesInRequest=None):
+    #     if bytesInRequest is None:
+    #         bytesInRequest = []
+    #     self.index = 0
+    #     self.request = bytearray(bytesInRequest)
+
     def __init__(self, bytesInRequest=None):
         if bytesInRequest is None:
-            bytesInRequest = []
+            bytesInRequest = 100 * [0]
         self.index = 0
         self.request = bytearray(bytesInRequest)
 
@@ -189,7 +195,7 @@ class JoinRequest:
     #           join request.
     # Variables: index
     def packAllBytes(self, bytesToPack):
-        firstByte = getFirstByte(bytesToPack)
+        firstByte = bitmask(getFirstByte(bytesToPack))
         self.request.append(firstByte)
         self.index += 1
 
@@ -204,6 +210,29 @@ class JoinRequest:
         fourthByte = bitmask(bytesToPack)
         self.request.append(fourthByte)
         self.index += 1
+
+    # TODO pyDoc
+    def readMessage(self, stringPosition):
+        message = bytearray()
+        lastIndex = stringPosition - self.index
+        for i in range(0, lastIndex):
+            message.append(self.request[self.index + i])
+        return str(message)
+
+    # TODO pyDoc
+    def packMessage(self, messageToPack):
+        incompleteMessage = bytearray(messageToPack)
+        completeMessage = bytearray(64)
+        if len(incompleteMessage) <= 64:
+            size = len(incompleteMessage)
+        else:
+            size = len(completeMessage)
+
+        for i in range(0, size - 1):
+            completeMessage[i] = incompleteMessage[i]
+        for j in completeMessage:
+            self.request[self.index] = j
+            self.index += 1
 
 
 # Create a join request and include our Group ID for the Master.
@@ -228,31 +257,43 @@ class ConfirmMaster:
 
     # Setup all Master variables
     def __init__(self, confirmationMessage):
-        self.CONFIRMATION = confirmationMessage
-        self.REQUEST = JoinRequest(self.CONFIRMATION)
+        self.confirmationMessage = confirmationMessage
+        self.REQUEST = JoinRequest(self.confirmationMessage)
         self.MASTER_ID = self.REQUEST.getID()
         self.MAGIC_NUMBER = self.REQUEST.getAllBytes()
         self.RING_ID = self.REQUEST.getID()
         self.NEXT_SLAVE_IP = self.REQUEST.getAllBytes()
+
+        # Source: https://stackoverflow.com/questions/9590965/
+        #         convert-an-ip-string-to-a-number-and-vice-versa
+        # Source User: Not_A_Golfer
+        self.FORMATTED_IP_ADDRESS = socket.inet_toa(
+            struct.pack('!L', self.NEXT_SLAVE_IP)
+        )
 
     # Method name: printEverything
     # Function: This function prints the information as requested from the
     #           Lab 2 specifications.
     # Variables: GID, RID, IP
     def printEverything(self):
-        # print("GID of the Master: ", self.MASTER_ID)
-        print("GID of the Master: %d" % self.MASTER_ID)
+        # print("GID of the Master: %d" % self.MASTER_ID)
+        print("GID of the Master: ", self.MASTER_ID)
 
         # print('Own Ring ID: ', self.RING_ID)
         print("Own Ring ID: %d" % self.RING_ID)
 
-        # Source: https://stackoverflow.com/questions/9590965/
-        #         convert-an-ip-string-to-a-number-and-vice-versa
-        # Source User: Not_A_Golfer
-        print('IP Address in Dotted Decimal Form: %s' %
-              socket.inet_ntoa(struct.pack('!L', self.NEXT_SLAVE_IP)))
+        # Obsolete because % is now unnecessary.
+        # print('IP Address in Dotted Decimal Form: %s' %
+        #       socket.inet_ntoa(struct.pack('!L', self.NEXT_SLAVE_IP)))
+
+        print("IP Address in Dotted Decimal Form: ", self.FORMATTED_IP_ADDRESS)
 
         print("\n")
+
+
+# TODO implement listening Slave class / functions
+def listen():
+    return 0
 
 
 # ----------------- Connecting Master to the Slave -----------------
