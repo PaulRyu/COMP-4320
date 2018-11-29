@@ -93,6 +93,11 @@ def shiftThirdByte(byte):
     return byte << 8
 
 
+# TODO PyDoc
+def convertIntLiteral(byte):
+    return byte & 0xFF
+
+
 # ------------------ Error Check Before Connecting -----------------
 # If the format: Slave | MasterHostName | MasterPortNumber is not followed, exit the system.
 if len(sys.argv) != 3:
@@ -289,6 +294,69 @@ class ConfirmMaster:
         print("IP Address in Dotted Decimal Form: ", self.FORMATTED_IP_ADDRESS)
 
         print("\n")
+
+
+class Message:
+    def __init__(self, message):
+        self.message = message
+        self.REQUEST = JoinRequest(self.message)
+        self.MASTER_ID = self.REQUEST.getID()
+        self.MAGIC_NUMBER = self.REQUEST.getAllBytes()
+        self.TIME_TO_LIVE = self.REQUEST.getID()
+        self.DESTINATION_NODE = self.REQUEST.getID()
+        self.ARRIVAL_NODE = self.REQUEST.getID()
+        self.message = self.REQUEST.readMessage(len(self.REQUEST.request) - 1)
+        self.CHECKSUMS = self.REQUEST.getID()
+
+    def createMessage(self):
+        finalMessage = JoinRequest()
+        finalMessage.packByte(self.MASTER_ID)
+        finalMessage.packAllBytes(self.MAGIC_NUMBER)
+        finalMessage.packByte(self.TIME_TO_LIVE)
+        finalMessage.packByte(self.DESTINATION_NODE)
+        finalMessage.packByte(self.ARRIVAL_NODE)
+        finalMessage.packMessage(self.message)
+        finalMessage.packByte(self.CHECKSUMS)
+        return finalMessage
+
+
+class CheckSum:
+    def __init__(self, checksum):
+        self.checksum = checksum
+        self.REQUEST = JoinRequest(self.checksum)
+        self.MASTER_ID = self.REQUEST.getID()
+        self.MAGIC_NUMBER = self.REQUEST.getAllBytes()
+        self.TIME_TO_LIVE = self.REQUEST.getID()
+        self.DESTINATION_NODE = self.REQUEST.getID()
+        self.ARRIVAL_NODE = self.REQUEST.getID()
+        self.message = self.REQUEST.readMessage(len(self.REQUEST.request) - 1)
+        self.CHECKSUMS = self.REQUEST.getID()
+
+    def getCheckSum(self):
+        checksum = 0
+        message = Message.createMessage()
+        firstBytes = bytearray()
+        for x in range(0, len(message.request) - 2):
+            firstBytes.append(message.request[x])
+
+        # TODO Delete only if sure this is 100% debugged.
+        # Replace here if necessary ---- STILL DEBUGGING ----
+        # checksum = 0
+        for y in firstBytes:
+
+            checksum += convertIntLiteral(y)
+
+            errorStatus = bitmask(getThirdByte(checksum))
+
+            if errorStatus > 0:
+                convertIntLiteral(checksum)
+                checksum += errorStatus
+
+        checksum = bitmask((~checksum))
+        return bitmask(checksum)
+
+
+
 
 
 # TODO implement listening Slave class / functions
