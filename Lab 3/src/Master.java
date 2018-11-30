@@ -20,7 +20,7 @@
  *
  * Compilation Instructions on the Tux Machines for This File (Group 22)
  *      Step 1: javac Master.java
- *      Step 2: java Master 10120
+ *      Step 2: java Master
  *
  */
 
@@ -87,7 +87,7 @@ public class Master {
     private void getNode() {
         try {
             ServerSocket ss = new ServerSocket(this.PORT_NUMBER);
-            System.out.println("Listening on receiving PORT_NUMBER TCP: " + this.PORT_NUMBER);
+            System.out.println("TCP --- Listening on: " + this.PORT_NUMBER);
             byte[] slaveInput;
             while (true) {
                 Socket sock = ss.accept();
@@ -112,7 +112,7 @@ public class Master {
     private void listen() {
         try {
             DatagramSocket ds = new DatagramSocket(10010 + (OUR_GROUP_ID * 5));
-            System.out.println("Listening on: " + this.PORT_NUMBER);
+            System.out.println("UDP --- Listening on: " + this.PORT_NUMBER);
             byte[] data = new byte[100];
             DatagramPacket dp =  new DatagramPacket(data, 100);
             while(true) {
