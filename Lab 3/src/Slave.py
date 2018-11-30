@@ -94,7 +94,6 @@ def shiftThirdByte(byte):
     return byte << 8
 
 
-# TODO PyDoc
 def convertIntLiteral(byte):
     return byte & 0xFF
 
@@ -109,7 +108,6 @@ if len(sys.argv) != 3:
 if MasterPortNumber < 0 or MasterPortNumber > 65535:
     print("Invalid port number. Please try again.")
     sys.exit()
-
 
 
 # TODO (Phase 2 only), repeatedly prompt the user for a ring ID RID and a message m.
@@ -299,6 +297,7 @@ class ConfirmMaster:
 
         print("\n")
 
+
 # ---------- Class To Handle Message Creation ----------
 # Class name: Message
 # Function: This class holds variables taken from JoinRequest (too crowded)
@@ -353,6 +352,7 @@ class Message:
         checksum = bitmask((~checksum))
         return bitmask(checksum)
 
+
 # ---------- Class To Handle Checksums ----------
 # Class name: CheckSum
 # Function: This class holds variables taken from JoinRequest (too crowded).
@@ -372,6 +372,7 @@ class CheckSum:
         self.CHECKSUMS = self.REQUEST.getID()
 
     # Setting off static errors, make sure if this can be used as a class method.
+
 
 # ---------- Class To Handle Message Creation ----------
 # Class name: MessageConstruction
@@ -429,7 +430,7 @@ def listen(multiThread, timeToDelay, masterName, portNumber, ringID, slaveIP):
     so = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     master = (masterName, portNumber)
     so.bind(master)
-# Continuously listen for messages from slave nodes
+    # Continuously listen for messages from slave nodes
     while 1:
         information, _ = so.recvfrom(4096)
         message = Message(information)
