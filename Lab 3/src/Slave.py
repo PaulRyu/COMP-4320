@@ -111,14 +111,16 @@ if MasterPortNumber < 0 or MasterPortNumber > 65535:
     sys.exit()
 
 
-# # TODO (Phase 2 only), repeatedly prompt the user for a ring ID RID and a message m.
+
+# TODO (Phase 2 only), repeatedly prompt the user for a ring ID RID and a message m.
 # RID_AND_MSG_RECEIVED = False
 # userRingID = ""
 # userMessage = ""
 # while not RID_AND_MSG_RECEIVED:
-#     # TODO Need to implement getting input from the user
-#     print("debug")
-
+#     userRingID = raw_input('RingID: ')
+#     userMessage = raw_input('Message to send: ')
+#     if len(userRingID) > 0 and len(userMessage) > 0:
+#         print(userRingID, userMessage)
 
 # ------------- Class To Handle Join Request Functions -------------
 # Class name: JoinRequest
@@ -230,17 +232,23 @@ class JoinRequest:
 
     # TODO pyDoc
     def packMessage(self, messageToPack):
-        incompleteMessage = bytearray(messageToPack)
-        completeMessage = bytearray(64)
-        if len(incompleteMessage) <= 64:
-            size = len(incompleteMessage)
-        else:
-            size = len(completeMessage)
-
-        for i in range(0, size - 1):
-            completeMessage[i] = incompleteMessage[i]
-        for j in completeMessage:
-            self.request[self.index] = j
+        # incompleteMessage = bytearray(messageToPack)
+        # completeMessage = bytearray(64)
+        # if len(incompleteMessage) <= 64:
+        #     size = len(incompleteMessage)
+        # else:
+        #     size = len(completeMessage)
+        #
+        # for i in range(0, size - 1):
+        #     completeMessage[i] = incompleteMessage[i]
+        # for j in completeMessage:
+        #     self.request[self.index] = j
+        #     self.index += 1
+        if len(messageToPack) > 64:
+            messageToPack = messageToPack[:64]
+        test = bytearray(messageToPack)
+        for element in test:
+            self.request.append(element)
             self.index += 1
 
 
@@ -263,7 +271,7 @@ class ConfirmMaster:
         # Source: https://stackoverflow.com/questions/9590965/
         #         convert-an-ip-string-to-a-number-and-vice-versa
         # Source User: Not_A_Golfer
-        self.FORMATTED_IP_ADDRESS = socket.inet_toa(
+        self.FORMATTED_IP_ADDRESS = socket.inet_ntoa(
             struct.pack('!L', self.NEXT_SLAVE_IP)
         )
 
@@ -310,28 +318,23 @@ class Message:
         finalMessage.packByte(self.CHECKSUMS)
         return finalMessage
 
+    def getCheckSum(self):
+        checksum = 0
+        shit = self.createMessage()
+        for a, y in enumerate(shit.request):
+            if a == len(shit.request) - 1:
+                continue
 
-def getCheckSum():
-    checksum = 0
-    message = Message.createMessage()
+            checksum += bitmask(y)
 
-    # TODO Delete only if sure this is 100% debugged.
-    # Replace here if necessary ---- STILL DEBUGGING ----
-    # checksum = 0
-    for a, y in enumerate(message.request):
-        if a == len(message.request) - 1:
-            continue
+            errorStatus = bitmask(getThirdByte(checksum))
 
-        checksum += bitmask(y)
+            if errorStatus > 0:
+                convertIntLiteral(checksum)
+                checksum += errorStatus
 
-        errorStatus = bitmask(getThirdByte(checksum))
-
-        if errorStatus > 0:
-            convertIntLiteral(checksum)
-            checksum += errorStatus
-
-    checksum = bitmask((~checksum))
-    return bitmask(checksum)
+        checksum = bitmask((~checksum))
+        return bitmask(checksum)
 
 
 class CheckSum:
@@ -350,10 +353,10 @@ class CheckSum:
 
 
 class MessageConstruction:
-    def __init__(self, message, destinationNode, confirmation):
+    def __init__(self, message, destinationNode, conf):
         self.message = message
         self.DESTINATION_NODE = destinationNode
-        self.CONFIRMATION = confirmation
+        self.conf = conf
 
         self.MASTER_ID = self.message.MASTER_ID
         self.MAGIC_NUMBER = self.message.MAGIC_NUMBER
@@ -371,9 +374,27 @@ class MessageConstruction:
         finalMessage.packByte(self.TIME_TO_LIVE)
         finalMessage.packByte(self.DESTINATION_NODE)
         finalMessage.packByte(self.ARRIVAL_NODE)
-        finalMessage.packMessage(self.message)
+        finalMessage.packMessage(self.conf)
         finalMessage.packByte(self.CHECKSUMS)
         return finalMessage
+
+    def getCheckSum(self):
+        finalMessage = self.createMessage()
+        checksum = 0
+        for a, y in enumerate(finalMessage.request):
+            if a == len(finalMessage.request) - 1:
+                continue
+
+            checksum += bitmask(y)
+
+            errorStatus = bitmask(getThirdByte(checksum))
+
+            if errorStatus > 0:
+                convertIntLiteral(checksum)
+                checksum += errorStatus
+
+        checksum = bitmask((~checksum))
+        return bitmask(checksum)
 
 
 # TODO implement listening Slave class / functions
@@ -386,7 +407,7 @@ def listen(multiThread, timeToDelay, masterName, portNumber, ringID, slaveIP):
         information, _ = so.recvfrom(4096)
         message = Message(information)
         rawChecksum = message.CHECKSUMS
-        checksum = getCheckSum()
+        checksum = message.getCheckSum()
         if rawChecksum == checksum:
             if message.DESTINATION_NODE == ringID:
                 print("Message received: " + str(message.message))
@@ -395,9 +416,9 @@ def listen(multiThread, timeToDelay, masterName, portNumber, ringID, slaveIP):
                 if message.TIME_TO_LIVE < 2:
                     print("Message not accepted. Try again.")
                 else:
-                    message.CHECKSUMS = getCheckSum()
-                    FORMATTED_IP_ADDRESS = socket.inet_ntoa(struct.pack('!L', slaveIP))
-                    nextRingIP = (FORMATTED_IP_ADDRESS, portNumber - 1)
+                    message.CHECKSUMS = message.getCheckSum()
+                    IP_ADDRESS = socket.inet_ntoa(struct.pack('!L', slaveIP))
+                    nextRingIP = (IP_ADDRESS, portNumber - 1)
 
                     # https://docs.python.org/2/library/socket.html#socket.socket.send
                     # socket.sendto(string, address)
@@ -440,9 +461,9 @@ confirmation = ConfirmMaster(ConfirmationFromServer)
 confirmation.printEverything()
 
 try:
-    _thread.start_new_thread(listen, (" ", 4, MasterHostName,
+    _thread.start_new_thread(listen, ("Thread-2", 4, MasterHostName,
                                       (10010 + confirmation.MASTER_ID
-                                       * 5 + confirmation.MASTER_ID)),
+                                       * 5 + confirmation.RING_ID)),
                              # TODO: Unexpected error bug.
                              confirmation.RING_ID, confirmation.NEXT_SLAVE_IP)
 except:
@@ -454,7 +475,7 @@ while 1:
         RingID = int(ri)
         messageToSend = input("Enter your message here: ")
         constructedMessage = MessageConstruction(confirmation, RingID, messageToSend)
-        constructedMessage.CHECKSUMS = getCheckSum()
+        constructedMessage.CHECKSUMS = constructedMessage.getCheckSum()
 
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         FORMATTED_IP_ADDRESS = socket.inet_ntoa(struct.pack('!L', confirmation.NEXT_SLAVE_IP))
