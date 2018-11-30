@@ -113,13 +113,10 @@ RID_AND_MSG_RECEIVED = False
 userRingID = ""
 userMessage = ""
 while not RID_AND_MSG_RECEIVED:
-    # TODO Need to implement getting input from the user
     userRingID = raw_input('RingID: ')
     userMessage = raw_input('Message to send: ')
     if len(userRingID) > 0 and len(userMessage) > 0:
         print(userRingID, userMessage)
-
-# TODO Need to implement datagram creation with correct format
 
 # ------------- Class To Handle Join Request Functions -------------
 # Class name: JoinRequest
