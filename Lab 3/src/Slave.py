@@ -113,14 +113,14 @@ if MasterPortNumber < 0 or MasterPortNumber > 65535:
 
 
 # TODO (Phase 2 only), repeatedly prompt the user for a ring ID RID and a message m.
-RID_AND_MSG_RECEIVED = False
-userRingID = ""
-userMessage = ""
-while not RID_AND_MSG_RECEIVED:
-    userRingID = raw_input('RingID: ')
-    userMessage = raw_input('Message to send: ')
-    if len(userRingID) > 0 and len(userMessage) > 0:
-        print(userRingID, userMessage)
+# RID_AND_MSG_RECEIVED = False
+# userRingID = ""
+# userMessage = ""
+# while not RID_AND_MSG_RECEIVED:
+#     userRingID = raw_input('RingID: ')
+#     userMessage = raw_input('Message to send: ')
+#     if len(userRingID) > 0 and len(userMessage) > 0:
+#         print(userRingID, userMessage)
 
 # ------------- Class To Handle Join Request Functions -------------
 # Class name: JoinRequest
