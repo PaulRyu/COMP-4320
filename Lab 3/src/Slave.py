@@ -1,7 +1,7 @@
 # Course: COMP-4320 Introduction to Networks
 # Institution: Auburn University
-# Submitting: Laboratory Assignment 2
-# Date: October 25, 2018
+# Submitting: Laboratory Assignment 3
+# Date: November 29, 2018
 # Authors: Paul Ryu, William Atkinson, Abriana Fornis
 # Emails: phc0004@auburn.edu, wja0007@auburn.edu, adf0018@auburn.edu
 # Resources used: JetBrains Pycharm IDE, Github, Sublime Text 3
@@ -222,7 +222,9 @@ class JoinRequest:
         self.request.append(fourthByte)
         self.index += 1
 
-    # TODO pyDoc
+    # Method name: readMessage
+    # Function: This function reads a byte array and converts it into a string.
+    # Variables: message, index
     def readMessage(self, stringPosition):
         message = bytearray()
         lastIndex = stringPosition - self.index
@@ -230,7 +232,10 @@ class JoinRequest:
             message.append(self.request[self.index + i])
         return str(message)
 
-    # TODO pyDoc
+    # Method name: packMessage
+    # Function: This function prepares an outgoing message to be sent and makes
+    #           sure the message is no more than 64 bytes long.
+    # Variables: messageToPack, index
     def packMessage(self, messageToPack):
         # incompleteMessage = bytearray(messageToPack)
         # completeMessage = bytearray(64)
@@ -294,8 +299,14 @@ class ConfirmMaster:
 
         print("\n")
 
-
+# ---------- Class To Handle Message Creation ----------
+# Class name: Message
+# Function: This class holds variables taken from JoinRequest (too crowded)
+#           and gets the checksum.
+# Variables: checksums, message, master ID, TTL, magic number, destination node,
+#            incoming node
 class Message:
+    # Set up Message variables
     def __init__(self, message):
         self.message = message
         self.REQUEST = JoinRequest(self.message)
@@ -307,6 +318,9 @@ class Message:
         self.message = self.REQUEST.readMessage(len(self.REQUEST.request) - 1)
         self.CHECKSUMS = self.REQUEST.getID()
 
+    # Method name: createMessage
+    # Function: This function prints the information packs a message to be sent.
+    # Variables: finalMessage
     def createMessage(self):
         finalMessage = JoinRequest(bytesInRequest=[])
         finalMessage.packByte(self.MASTER_ID)
@@ -318,6 +332,9 @@ class Message:
         finalMessage.packByte(self.CHECKSUMS)
         return finalMessage
 
+    # Method name: getCheckSum
+    # Function: This function handles the checksum as requested.
+    # Variables: checksum
     def getCheckSum(self):
         checksum = 0
         shit = self.createMessage()
@@ -336,8 +353,13 @@ class Message:
         checksum = bitmask((~checksum))
         return bitmask(checksum)
 
-
+# ---------- Class To Handle Checksums ----------
+# Class name: CheckSum
+# Function: This class holds variables taken from JoinRequest (too crowded).
+# Variables: checksums, message, master ID, TTL, magic number, destination node,
+#            incoming node
 class CheckSum:
+    # Set up CheckSum variables
     def __init__(self, checksum):
         self.checksum = checksum
         self.REQUEST = JoinRequest(self.checksum)
@@ -351,7 +373,12 @@ class CheckSum:
 
     # Setting off static errors, make sure if this can be used as a class method.
 
-
+# ---------- Class To Handle Message Creation ----------
+# Class name: MessageConstruction
+# Function: This class holds variables taken from JoinRequest (too crowded)
+#           and packs a message for forwarding.
+# Variables: checksums, message, master ID, TTL, magic number, destination node,
+#            incoming node, finalMessage
 class MessageConstruction:
     def __init__(self, message, destinationNode, conf):
         self.message = message
@@ -402,12 +429,13 @@ def listen(multiThread, timeToDelay, masterName, portNumber, ringID, slaveIP):
     so = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     master = (masterName, portNumber)
     so.bind(master)
-
+# Continuously listen for messages from slave nodes
     while 1:
         information, _ = so.recvfrom(4096)
         message = Message(information)
         rawChecksum = message.CHECKSUMS
         checksum = message.getCheckSum()
+        # check if received checksum is correct and proceed as requested in Lab 3
         if rawChecksum == checksum:
             if message.DESTINATION_NODE == ringID:
                 print("Message received: " + str(message.message))
@@ -429,6 +457,7 @@ def listen(multiThread, timeToDelay, masterName, portNumber, ringID, slaveIP):
                     # TODO: test both
                     so.sendto(message.createMessage().request, nextRingIP)
         else:
+            # Print error if checksum is invalid.
             print("Checksum numbers" + str(rawChecksum) + " and "
                   + str(checksum) + " do not match. Please try again.")
 

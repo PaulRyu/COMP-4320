@@ -1,6 +1,6 @@
 /* Course: COMP-4320 Introduction to Networks
  * Institution: Auburn University
- * Submitting: Laboratory Assignment 2
+ * Submitting: Laboratory Assignment 3
  * Date: November 29, 2018
  * Authors: Paul Ryu, William Atkinson, Abriana Fornis
  * Emails: phc0004@auburn.edu, wja0007@auburn.edu, adf0018@auburn.edu
@@ -39,40 +39,7 @@ import java.io.OutputStream;
 // Function: Main class, acts as the entry point for code and functions for Master.
 // Main variables: GID, RID, Port, SlaveIP
 */
-public class Master extends Thread {
-    // Method name: run
-    // Funtion: run(), overrides the run funcion in the Thread class
-    // Behaviors: runs a separate task on another thread
-    public void run() {
-        Scanner scan = new Scanner(System.in);
-        int ridIn;
-        String msgIn = "";
-
-        while (true) {
-            System.out.println("Enter the node's Ring ID: ");
-            ridIn = scan.nextInt();
-            System.out.println("Enter your message here: ");
-            msgIn = scan.nextLine();
-            
-            byte[] msg = msgIn.getBytes();
-            if (msg.length > 64) {
-                System.out.println("Error: message is too large.");
-            }
-            else {
-
-            }
-            
-        }
-    }
-
-    public void forward(int rid, String msg) {
-        if (rid != 0) {
-
-        }
-        else {
-            System.out.println(msg);
-        }
-    }
+public class Master {
 
     //------------------------------- Variables -------------------------------
     private byte RING_ID;
