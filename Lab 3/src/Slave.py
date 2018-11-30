@@ -13,6 +13,7 @@
 
 
 # ---------------------------- Imports ----------------------------
+import _thread
 import socket
 import sys
 import struct
@@ -93,6 +94,11 @@ def shiftThirdByte(byte):
     return byte << 8
 
 
+# TODO PyDoc
+def convertIntLiteral(byte):
+    return byte & 0xFF
+
+
 # ------------------ Error Check Before Connecting -----------------
 # If the format: Slave | MasterHostName | MasterPortNumber is not followed, exit the system.
 if len(sys.argv) != 3:
@@ -101,11 +107,9 @@ if len(sys.argv) != 3:
 
 # Check if the Master Port Number is between 0 and 65535.
 if MasterPortNumber < 0 or MasterPortNumber > 65535:
-    print("Slave Error")
+    print("Invalid port number. Please try again.")
     sys.exit()
 
-# ----------------- Connecting Slave to the Master -----------------
-sock.connect((MasterHostName, MasterPortNumber))
 
 
 # TODO (Phase 2 only), repeatedly prompt the user for a ring ID RID and a message m.
@@ -123,11 +127,23 @@ while not RID_AND_MSG_RECEIVED:
 # Input: Bytes of data, specifically the request to join the node ring.
 # Variables: request, index
 class JoinRequest:
+    # def __init__(self, bytesInRequest=None):
+    #     if bytesInRequest is None:
+    #         bytesInRequest = []
+    #     self.index = 0
+    #     self.request = bytearray(bytesInRequest)
+
     def __init__(self, bytesInRequest=None):
+        # if bytesInRequest is None:
+        #     bytesInRequest = 100 * [0]
         if bytesInRequest is None:
             bytesInRequest = []
         self.index = 0
         self.request = bytearray(bytesInRequest)
+
+    def printAll(self):
+        for elem in self.request:
+            print(elem)
 
     # Method name: getID
     # Output: The first byte, or ID, in the request.
@@ -190,7 +206,7 @@ class JoinRequest:
     #           join request.
     # Variables: index
     def packAllBytes(self, bytesToPack):
-        firstByte = getFirstByte(bytesToPack)
+        firstByte = bitmask(getFirstByte(bytesToPack))
         self.request.append(firstByte)
         self.index += 1
 
@@ -206,6 +222,222 @@ class JoinRequest:
         self.request.append(fourthByte)
         self.index += 1
 
+    # TODO pyDoc
+    def readMessage(self, stringPosition):
+        message = bytearray()
+        lastIndex = stringPosition - self.index
+        for i in range(0, lastIndex):
+            message.append(self.request[self.index + i])
+        return str(message)
+
+    # TODO pyDoc
+    def packMessage(self, messageToPack):
+        # incompleteMessage = bytearray(messageToPack)
+        # completeMessage = bytearray(64)
+        # if len(incompleteMessage) <= 64:
+        #     size = len(incompleteMessage)
+        # else:
+        #     size = len(completeMessage)
+        #
+        # for i in range(0, size - 1):
+        #     completeMessage[i] = incompleteMessage[i]
+        # for j in completeMessage:
+        #     self.request[self.index] = j
+        #     self.index += 1
+        if len(messageToPack) > 64:
+            messageToPack = messageToPack[:64]
+        test = bytearray(messageToPack)
+        for element in test:
+            self.request.append(element)
+            self.index += 1
+
+
+# ---------- Class To Handle Message Received From Master ----------
+# Class name: ConfirmMaster
+# Function: This class holds variables taken from JoinRequest (too crowded)
+#           and prints all information given back from the Master file.
+# Variables: GID, RID, IP
+class ConfirmMaster:
+
+    # Setup all Master variables
+    def __init__(self, message):
+        self.message = message
+        self.REQUEST = JoinRequest(self.message)
+        self.MASTER_ID = self.REQUEST.getID()
+        self.MAGIC_NUMBER = self.REQUEST.getAllBytes()
+        self.RING_ID = self.REQUEST.getID()
+        self.NEXT_SLAVE_IP = self.REQUEST.getAllBytes()
+
+        # Source: https://stackoverflow.com/questions/9590965/
+        #         convert-an-ip-string-to-a-number-and-vice-versa
+        # Source User: Not_A_Golfer
+        self.FORMATTED_IP_ADDRESS = socket.inet_ntoa(
+            struct.pack('!L', self.NEXT_SLAVE_IP)
+        )
+
+    # Method name: printEverything
+    # Function: This function prints the information as requested from the
+    #           Lab 2 specifications.
+    # Variables: GID, RID, IP
+    def printEverything(self):
+        # print("GID of the Master: %d" % self.MASTER_ID)
+        print("GID of the Master: ", self.MASTER_ID)
+
+        # print('Own Ring ID: ', self.RING_ID)
+        print("Own Ring ID: %d" % self.RING_ID)
+
+        # Obsolete because % is now unnecessary.
+        # print('IP Address in Dotted Decimal Form: %s' %
+        #       socket.inet_ntoa(struct.pack('!L', self.NEXT_SLAVE_IP)))
+
+        print("IP Address in Dotted Decimal Form: ", self.FORMATTED_IP_ADDRESS)
+
+        print("\n")
+
+
+class Message:
+    def __init__(self, message):
+        self.message = message
+        self.REQUEST = JoinRequest(self.message)
+        self.MASTER_ID = self.REQUEST.getID()
+        self.MAGIC_NUMBER = self.REQUEST.getAllBytes()
+        self.TIME_TO_LIVE = self.REQUEST.getID()
+        self.DESTINATION_NODE = self.REQUEST.getID()
+        self.ARRIVAL_NODE = self.REQUEST.getID()
+        self.message = self.REQUEST.readMessage(len(self.REQUEST.request) - 1)
+        self.CHECKSUMS = self.REQUEST.getID()
+
+    def createMessage(self):
+        finalMessage = JoinRequest(bytesInRequest=[])
+        finalMessage.packByte(self.MASTER_ID)
+        finalMessage.packAllBytes(self.MAGIC_NUMBER)
+        finalMessage.packByte(self.TIME_TO_LIVE)
+        finalMessage.packByte(self.DESTINATION_NODE)
+        finalMessage.packByte(self.ARRIVAL_NODE)
+        finalMessage.packMessage(self.message)
+        finalMessage.packByte(self.CHECKSUMS)
+        return finalMessage
+
+    def getCheckSum(self):
+        checksum = 0
+        shit = self.createMessage()
+        for a, y in enumerate(shit.request):
+            if a == len(shit.request) - 1:
+                continue
+
+            checksum += bitmask(y)
+
+            errorStatus = bitmask(getThirdByte(checksum))
+
+            if errorStatus > 0:
+                convertIntLiteral(checksum)
+                checksum += errorStatus
+
+        checksum = bitmask((~checksum))
+        return bitmask(checksum)
+
+
+class CheckSum:
+    def __init__(self, checksum):
+        self.checksum = checksum
+        self.REQUEST = JoinRequest(self.checksum)
+        self.MASTER_ID = self.REQUEST.getID()
+        self.MAGIC_NUMBER = self.REQUEST.getAllBytes()
+        self.TIME_TO_LIVE = self.REQUEST.getID()
+        self.DESTINATION_NODE = self.REQUEST.getID()
+        self.ARRIVAL_NODE = self.REQUEST.getID()
+        self.message = self.REQUEST.readMessage(len(self.REQUEST.request) - 1)
+        self.CHECKSUMS = self.REQUEST.getID()
+
+    # Setting off static errors, make sure if this can be used as a class method.
+
+
+class MessageConstruction:
+    def __init__(self, message, destinationNode, conf):
+        self.message = message
+        self.DESTINATION_NODE = destinationNode
+        self.conf = conf
+
+        self.MASTER_ID = self.message.MASTER_ID
+        self.MAGIC_NUMBER = self.message.MAGIC_NUMBER
+        self.TIME_TO_LIVE = 255
+        self.ARRIVAL_NODE = self.message.RING_ID
+        # self.CHECKSUMS = 144
+        # self.CHECKSUMS = getCheckSum()
+        # self.REQUEST = self.createMessage()
+        self.CHECKSUMS = 0
+
+    def createMessage(self):
+        finalMessage = JoinRequest(bytesInRequest=[])
+        finalMessage.packByte(self.MASTER_ID)
+        finalMessage.packAllBytes(self.MAGIC_NUMBER)
+        finalMessage.packByte(self.TIME_TO_LIVE)
+        finalMessage.packByte(self.DESTINATION_NODE)
+        finalMessage.packByte(self.ARRIVAL_NODE)
+        finalMessage.packMessage(self.conf)
+        finalMessage.packByte(self.CHECKSUMS)
+        return finalMessage
+
+    def getCheckSum(self):
+        finalMessage = self.createMessage()
+        checksum = 0
+        for a, y in enumerate(finalMessage.request):
+            if a == len(finalMessage.request) - 1:
+                continue
+
+            checksum += bitmask(y)
+
+            errorStatus = bitmask(getThirdByte(checksum))
+
+            if errorStatus > 0:
+                convertIntLiteral(checksum)
+                checksum += errorStatus
+
+        checksum = bitmask((~checksum))
+        return bitmask(checksum)
+
+
+# TODO implement listening Slave class / functions
+def listen(multiThread, timeToDelay, masterName, portNumber, ringID, slaveIP):
+    so = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    master = (masterName, portNumber)
+    so.bind(master)
+
+    while 1:
+        information, _ = so.recvfrom(4096)
+        message = Message(information)
+        rawChecksum = message.CHECKSUMS
+        checksum = message.getCheckSum()
+        if rawChecksum == checksum:
+            if message.DESTINATION_NODE == ringID:
+                print("Message received: " + str(message.message))
+            else:
+                message.TIME_TO_LIVE -= 1
+                if message.TIME_TO_LIVE < 2:
+                    print("Message not accepted. Try again.")
+                else:
+                    message.CHECKSUMS = message.getCheckSum()
+                    IP_ADDRESS = socket.inet_ntoa(struct.pack('!L', slaveIP))
+                    nextRingIP = (IP_ADDRESS, portNumber - 1)
+
+                    # https://docs.python.org/2/library/socket.html#socket.socket.send
+                    # socket.sendto(string, address)
+                    # Send data to the socket. The socket should not be connected to a
+                    # remote socket, since the destination socket is specified by address.
+                    # The optional flags argument has the same meaning as for recv() above.
+                    # Return the number of bytes sent.
+                    # TODO: test both
+                    so.sendto(message.createMessage().request, nextRingIP)
+        else:
+            print("Checksum numbers" + str(rawChecksum) + " and "
+                  + str(checksum) + " do not match. Please try again.")
+
+            # This produces a type error.. even though str is a parameter as shown above.
+            # s.sendto(str(message.createMessage().request), nextRingIP)
+
+
+# ----------------- Connecting Slave to the Master -----------------
+sock.connect((MasterHostName, MasterPortNumber))
 
 # Create a join request and include our Group ID for the Master.
 request = JoinRequest()
@@ -219,43 +451,6 @@ request.packAllBytes(int(MagicNumber, 16))
 # Send the join request.
 sock.send(request.request)
 
-
-# ---------- Class To Handle Message Received From Master ----------
-# Class name: ConfirmMaster
-# Function: This class holds variables taken from JoinRequest (too crowded)
-#           and prints all information given back from the Master file.
-# Variables: GID, RID, IP
-class ConfirmMaster:
-
-    # Setup all Master variables
-    def __init__(self, confirmationMessage):
-        self.CONFIRMATION = confirmationMessage
-        self.REQUEST = JoinRequest(self.CONFIRMATION)
-        self.MASTER_ID = self.REQUEST.getID()
-        self.MAGIC_NUMBER = self.REQUEST.getAllBytes()
-        self.RING_ID = self.REQUEST.getID()
-        self.NEXT_SLAVE_IP = self.REQUEST.getAllBytes()
-
-    # Method name: printEverything
-    # Function: This function prints the information as requested from the
-    #           Lab 2 specifications.
-    # Variables: GID, RID, IP
-    def printEverything(self):
-        # print("GID of the Master: ", self.MASTER_ID)
-        print("GID of the Master: %d" % self.MASTER_ID)
-
-        # print('Own Ring ID: ', self.RING_ID)
-        print("Own Ring ID: %d" % self.RING_ID)
-
-        # Source: https://stackoverflow.com/questions/9590965/
-        #         convert-an-ip-string-to-a-number-and-vice-versa
-        # Source User: Not_A_Golfer
-        print('IP Address in Dotted Decimal Form: %s' %
-              socket.inet_ntoa(struct.pack('!L', self.NEXT_SLAVE_IP)))
-
-        print("\n")
-
-
 # ----------------- Connecting Master to the Slave -----------------
 # Receives 4KB information.
 ConfirmationFromServer = sock.recv(4096)
@@ -264,6 +459,34 @@ ConfirmationFromServer = sock.recv(4096)
 # Uses Class: ConfirmMaster
 confirmation = ConfirmMaster(ConfirmationFromServer)
 confirmation.printEverything()
+
+try:
+    _thread.start_new_thread(listen, ("Thread-2", 4, MasterHostName,
+                                      (10010 + confirmation.MASTER_ID
+                                       * 5 + confirmation.RING_ID)),
+                             # TODO: Unexpected error bug.
+                             confirmation.RING_ID, confirmation.NEXT_SLAVE_IP)
+except:
+    print("Cannot start thread. Please run again.")
+
+while 1:
+    try:
+        ri = input("Enter the node's Ring ID: ")
+        RingID = int(ri)
+        messageToSend = input("Enter your message here: ")
+        constructedMessage = MessageConstruction(confirmation, RingID, messageToSend)
+        constructedMessage.CHECKSUMS = constructedMessage.getCheckSum()
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        FORMATTED_IP_ADDRESS = socket.inet_ntoa(struct.pack('!L', confirmation.NEXT_SLAVE_IP))
+
+        SUCCESS = s.sendto((str(constructedMessage.createMessage().request)),
+                           ((FORMATTED_IP_ADDRESS,
+                             (10010 + confirmation.MASTER_ID * 5 + confirmation.MASTER_ID)) - 1))
+
+        print("Sending message... ")
+    except ValueError as x:
+        print("Invalid Node Ring ID. Please try again.")
 
 # ---------------------- METHODOLOGY ABANDONED ---------------------
 # This approach is discarded because Python does not have an entry point post-compilation
