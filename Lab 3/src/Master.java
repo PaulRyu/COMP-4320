@@ -31,6 +31,7 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.util.Scanner;
 
 /*
 //------------------------------ Main Master Class ----------------------------
@@ -38,7 +39,40 @@ import java.net.ServerSocket;
 // Function: Main class, acts as the entry point for code and functions for Master.
 // Main variables: GID, RID, Port, SlaveIP
 */
-public class Master {
+public class Master extends Thread {
+    // Method name: run
+    // Funtion: run(), overrides the run funcion in the Thread class
+    // Behaviors: runs a separate task on another thread
+    public void run() {
+        Scanner scan = new Scanner(System.in);
+        int ridIn;
+        String msgIn = "";
+
+        while (true) {
+            System.out.println("Enter the node's Ring ID: ");
+            ridIn = scan.nextInt();
+            System.out.println("Enter your message here: ");
+            msgIn = scan.nextLine();
+            
+            byte[] msg = msgIn.getBytes();
+            if (msg.length > 64) {
+                System.out.println("Error: message is too large.");
+            }
+            else {
+
+            }
+            
+        }
+    }
+
+    public void forward(int rid, String msg) {
+        if (rid != 0) {
+
+        }
+        else {
+            System.out.println(msg);
+        }
+    }
 
     // Method name: main
     // Function: main() function, entry point for arguments put into command line
