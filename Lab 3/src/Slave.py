@@ -395,6 +395,7 @@ class MessageConstruction:
         # self.REQUEST = self.createMessage()
         self.CHECKSUMS = 0
 
+    # Function like others to create the packet
     def createMessage(self):
         finalMessage = JoinRequest(bytesInRequest=[])
         finalMessage.packByte(self.MASTER_ID)
@@ -406,6 +407,7 @@ class MessageConstruction:
         finalMessage.packByte(self.CHECKSUMS)
         return finalMessage
 
+    # Compute checksum, duplicate from what's found above.
     def getCheckSum(self):
         finalMessage = self.createMessage()
         checksum = 0
@@ -442,6 +444,8 @@ def listen(multiThread, timeToDelay, masterName, portNumber, ringID, slaveIP):
                 print("Message received: " + str(message.message))
             else:
                 message.TIME_TO_LIVE -= 1
+
+                # Ensure TTL does not exceed 1
                 if message.TIME_TO_LIVE < 2:
                     print("Message not accepted. Try again.")
                 else:
@@ -490,31 +494,49 @@ ConfirmationFromServer = sock.recv(4096)
 confirmation = ConfirmMaster(ConfirmationFromServer)
 confirmation.printEverything()
 
+# Required by socket functions
 try:
-    _thread.start_new_thread(listen, ("Thread-2", 4, MasterHostName,
+
+    # Listen for a message from Master, specifically our modified
+    # GID and HN
+    _thread.start_new_thread(listen, (" ", 4, MasterHostName,
                                       (10010 + confirmation.MASTER_ID
                                        * 5 + confirmation.RING_ID)),
                              # TODO: Unexpected error bug.
                              confirmation.RING_ID, confirmation.NEXT_SLAVE_IP)
+
+# Similar to Java catch statement
+# Ignore broad error
 except:
     print("Cannot start thread. Please run again.")
 
+# Infinite loop prompting the user for RID and M
 while 1:
+
+    # Required by socket functions
     try:
+
+        # Get user input
         ri = input("Enter the node's Ring ID: ")
         RingID = int(ri)
         messageToSend = input("Enter your message here: ")
+
+        # Create the message
         constructedMessage = MessageConstruction(confirmation, RingID, messageToSend)
         constructedMessage.CHECKSUMS = constructedMessage.getCheckSum()
 
+        # Open a socket and pack information
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         FORMATTED_IP_ADDRESS = socket.inet_ntoa(struct.pack('!L', confirmation.NEXT_SLAVE_IP))
 
+        # Send the packet
         SUCCESS = s.sendto((str(constructedMessage.createMessage().request)),
                            ((FORMATTED_IP_ADDRESS,
                              (10010 + confirmation.MASTER_ID * 5 + confirmation.MASTER_ID)) - 1))
 
         print("Sending message... ")
+
+    # Required catch statement
     except ValueError as x:
         print("Invalid Node Ring ID. Please try again.")
 
