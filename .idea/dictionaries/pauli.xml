@@ -11,6 +11,7 @@
       <w>bitmask</w>
       <w>bitshifting</w>
       <w>bytearray</w>
+      <w>checksums</w>
       <w>fornis</w>
       <w>fprintf</w>
       <w>freeaddrinfo</w>
@@ -41,6 +42,7 @@
       <w>socktype</w>
       <w>strerror</w>
       <w>strlen</w>
+      <w>struct</w>
       <w>structs</w>
       <w>tdisplay</w>
       <w>udisplay</w>
